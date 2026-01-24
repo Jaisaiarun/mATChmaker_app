@@ -1,0 +1,10 @@
+python-dotenv
+flask
+flask-cors
+sqlalchemy
+flask_sqlalchemy
+gunicorn
+joblib
+apscheduler
+psutil
+git+https://github.com/BTheDragonMaster/parasect
