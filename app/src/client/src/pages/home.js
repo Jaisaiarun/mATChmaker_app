@@ -20,24 +20,28 @@ const Home = () => {
             <Box display='flex' flexDirection='row' justifyContent='center' alignItems='center'>
                 <Box
                     component='img'
-                    src='/paras.png'
-                    alt='PARAS logo'
+                    // src='/paras.png'
+                    src='/mATChmaker_square.png'
+                    alt='mATChmaker logo'
                     sx={{ maxWidth: 300 }}
                 />
-                <Box
-                    component='img'
-                    src='/parasect.png'
-                    alt='PARASECT logo'
-                    sx={{ maxWidth: 300 }}
-                />
+                {/*<Box*/}
+                {/*    component='img'*/}
+                {/*    // src='/parasect.png'*/}
+                {/*    src='/mATChmaker_square.png'*/}
+                {/*    alt='PARASECT logo'*/}
+                {/*    sx={{ maxWidth: 300 }}*/}
+                {/*/>*/}
             </Box>
 
             <Typography variant='h3' component='div' fontWeight='bold' gutterBottom>
-                Welcome to PARAS(ECT)!
+                {/*Welcome to PARAS(ECT)!*/}
+                Welcome to mATChmaker!
             </Typography>
 
             <Typography variant='h6' component='div' color='textSecondary' align='center' gutterBottom>
-                Discover our adenylation domain substrate specificity prediction models.
+                {/*Discover our adenylation domain substrate specificity prediction models.*/}
+                mATChmaker is a tool for modular NRPS domain compatibility and substrate matching.
             </Typography>
 
             <Box

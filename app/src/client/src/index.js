@@ -23,36 +23,75 @@ import DataAnnotation from './pages/data_annotation'
 import AnnotationEditor from './pages/annotation_editor'
 import QueryDatabase from './pages/query_database'
 
+
+
 /**
  * Custom theme for the app.
  * 
  * @returns {Theme} - The custom theme for the app.
  */
+// const theme = createTheme({
+//     palette: {
+//         primary: {
+//             main: '#3d7dca',
+//         },
+//         secondary: {
+//             main: '#ffcb05',
+//         },
+//         white: {
+//             main: '#ffffff',
+//         },
+//         black: {
+//             main: '#000000',
+//         },
+//         gray: {
+//             main: '#f5f5f5',
+//         },
+//     },
+//     typography: {
+//         fontFamily: [
+//             'Arial',
+//             'Roboto',
+//             'sans-serif',
+//         ].join(','),
+//     },
+// });
+
 const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#3d7dca',
-        },
-        secondary: {
-            main: '#ffcb05',
-        },
-        white: {
-            main: '#ffffff',
-        },
-        black: {
-            main: '#000000',
-        },
-        gray: {
-            main: '#f5f5f5',
-        },
+  palette: {
+    mode: 'light',
+
+    primary: {
+      main: '#C9A24D',
+      dark: '#9E7C2F',
+      contrastText: '#2B2B2B',
     },
-    typography: {
-        fontFamily: [
-            'Arial',
-            'Roboto',
-            'sans-serif',
-        ].join(','),
+
+    secondary: {
+      main: '#4F8F8B',
+      contrastText: '#FFFFFF',
     },
+
+    error: {
+      main: '#8C2D4F', // magenta chain
+    },
+
+    background: {
+      default: '#EFE4C2',
+      paper: '#F9F6EC',
+    },
+
+    text: {
+      primary: '#2B2B2B',
+      secondary: '#6B6255',
+    },
+
+    divider: '#D8CFAE',
+  },
+
+  typography: {
+    fontFamily: ['Arial', 'Roboto', 'sans-serif'].join(','),
+  },
 });
 
 /**
@@ -157,7 +196,7 @@ const CustomToolbar = () => {
                     sx={{ marginLeft: '16px' }}
                 >
                     <Typography sx={{ color: 'white.main' }}>
-                        PARAS {version} (web app: v{process.env.REACT_APP_VERSION ? process.env.REACT_APP_VERSION : 'UNKNOWN'})
+                        mATCmaker {version} (web app: v{process.env.REACT_APP_VERSION ? process.env.REACT_APP_VERSION : 'UNKNOWN'})
                     </Typography>
                 </Typography>
             </Toolbar>
