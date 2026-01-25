@@ -23,6 +23,8 @@ import DataAnnotation from './pages/data_annotation'
 import AnnotationEditor from './pages/annotation_editor'
 import QueryDatabase from './pages/query_database'
 
+import SubmitTTE from "./pages/submitTTE";
+
 
 
 /**
@@ -172,6 +174,12 @@ const CustomToolbar = () => {
                         <UploadIcon sx={{ marginRight: '10px' }} />
                         Submit
                     </MenuItem>
+
+                    <MenuItem onClick={() => handleMenuItemClick("/submit_tte")}>
+                        <UploadIcon sx={{ marginRight: '10px' }} />
+                          TTE Comparison
+                    </MenuItem>
+
                     <MenuItem onClick={() => handleMenuItemClick('/retrieve')}>
                         <RetrieveIcon sx={{ marginRight: '10px' }} />
                         Retrieve
@@ -220,6 +228,10 @@ function AppRoutes () {
                 <Route 
                     path='/submit' 
                     element={<Submit />}
+                />
+                <Route
+                    path="/submit_tte"
+                    element={<SubmitTTE />}
                 />
                 <Route 
                     path='/retrieve' 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Box, Typography, Button, Link, Tooltip } from '@mui/material';
+import {Box, Button, Link, Tooltip, Typography} from '@mui/material';
 import ExitIcon from '@mui/icons-material/ExitToApp';
 
 /**
  * Home component that displays the home page content.
- * 
+ *
  * @returns {React.ReactElement} - The component showing the home page content.
  */
 const Home = () => {
@@ -23,7 +23,7 @@ const Home = () => {
                     // src='/paras.png'
                     src='/mATChmaker_square.png'
                     alt='mATChmaker logo'
-                    sx={{ maxWidth: 300 }}
+                    sx={{maxWidth: 300}}
                 />
                 {/*<Box*/}
                 {/*    component='img'*/}
@@ -59,20 +59,30 @@ const Home = () => {
                     color='primary'
                     size='large'
                     href='/submit'
-                    sx={{ marginBottom: 3 }}
+                    sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{ color: 'white.main' }}>
+                    <Typography sx={{color: 'white.main'}}>
                         Start predicting
                     </Typography>
                 </Button>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    size='large'
+                    href="/submit_tte"
+                    sx={{marginBottom: 3}}
+                >
+                    Start TTE Comparison
+                </Button>
+
                 <Button
                     variant='contained'
                     color='primary'
                     size='large'
                     href='/retrieve'
-                    sx={{ marginBottom: 3 }}
+                    sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{ color: 'white.main' }}>
+                    <Typography sx={{color: 'white.main'}}>
                         Retrieve results
                     </Typography>
                 </Button>
@@ -81,9 +91,9 @@ const Home = () => {
                     color='primary'
                     size='large'
                     href='/data_annotation'
-                    sx={{ marginBottom: 3 }}
+                    sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{ color: 'white.main' }}>
+                    <Typography sx={{color: 'white.main'}}>
                         Annotate domain
                     </Typography>
                 </Button>
@@ -92,27 +102,27 @@ const Home = () => {
                     color='primary'
                     size='large'
                     href='/query_database'
-                    sx={{ marginBottom: 3 }}
+                    sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{ color: 'white.main' }}>
+                    <Typography sx={{color: 'white.main'}}>
                         Query database
                     </Typography>
                 </Button>
             </Box>
 
             <Typography variant='body1' align='center' color='textSecondary' gutterBottom>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{display: 'flex', alignItems: 'center'}}>
                     Want to learn more about the research behind PARAS and PARASECT?
                     <Tooltip title='Opens new tab to bioRxiv.' arrow>
-                        <Link 
+                        <Link
                             href='https://www.biorxiv.org/content/10.1101/2025.01.08.631717v1'
-                            underline='hover' 
+                            underline='hover'
                             target='_blank'
-                            sx={{ marginLeft: 1, fontWeight: 'bold' }}
+                            sx={{marginLeft: 1, fontWeight: 'bold'}}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                Read our publication 
-                                <ExitIcon fontSize='small' />
+                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                                Read our publication
+                                <ExitIcon fontSize='small'/>
                             </Box>
                         </Link>
                     </Tooltip>
@@ -120,18 +130,18 @@ const Home = () => {
             </Typography>
 
             <Typography variant='body1' align='center' color='textSecondary' gutterBottom>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{display: 'flex', alignItems: 'center'}}>
                     Did you find PARAS or PARASECT useful?
                     <Tooltip title='Opens new tab to bioRxiv.' arrow>
-                        <Link 
+                        <Link
                             href='https://www.biorxiv.org/content/10.1101/2025.01.08.631717v1'
-                            underline='hover' 
+                            underline='hover'
                             target='_blank'
-                            sx={{ marginLeft: 1, fontWeight: 'bold' }}
+                            sx={{marginLeft: 1, fontWeight: 'bold'}}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
                                 Please cite our publication
-                                <ExitIcon fontSize='small' />
+                                <ExitIcon fontSize='small'/>
                             </Box>
                         </Link>
                     </Tooltip>
@@ -139,18 +149,18 @@ const Home = () => {
             </Typography>
 
             <Typography variant='body1' align='center' color='textSecondary'>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{display: 'flex', alignItems: 'center'}}>
                     Have something to contribute?
                     <Tooltip title='Opens new tab to GitHub.' arrow>
-                        <Link 
+                        <Link
                             href='https://github.com/bthedragonmaster/parasect'
                             target='_blank'
                             underline='hover'
-                            sx={{ marginLeft: 1, fontWeight: 'bold' }}
+                            sx={{marginLeft: 1, fontWeight: 'bold'}}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
                                 Visit our GitHub page
-                                <ExitIcon fontSize='small' />
+                                <ExitIcon fontSize='small'/>
                             </Box>
                         </Link>
                     </Tooltip>
