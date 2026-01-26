@@ -60,11 +60,11 @@ The app will be available at `https://localhost:4010/`.
 
 ### Commands
 ```# Build the development server image
-docker compose -f .\docker-compose.yml -f .\docker-compose.dev.yml build paras-server
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -p paras up --build
 ````
 
 ```# Run the development server container
-docker compose -f .\docker-compose.yml -f .\docker-compose.dev.yml up paras-server
+docker compose -p paras down
 ```
 
 ## Learning topics:

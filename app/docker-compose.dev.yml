@@ -1,0 +1,46 @@
+#services:
+#  # =========================
+#  # Backend – DEV MODE
+#  # =========================
+#  paras-server:
+#    # Override production command
+#    command:
+#      - conda
+#      - run
+#      - --no-capture-output
+#      - -n
+#      - web
+#      - gunicorn
+#      - api:app
+#      - --bind
+#      - 0.0.0.0:4009
+#      - --reload
+#      - --workers
+#      - "1"
+#      - --threads
+#      - "1"
+#
+#    # Live-mount backend source
+#    volumes:
+#      - ./src/server:/app
+#      - ./models:/app/models:ro
+#
+#    # Dev-friendly behavior
+#    restart: "no"
+#
+#    # Optional: clearer logs
+#    environment:
+#      - LOG_LEVEL=DEBUG
+#
+##  # =========================
+##  # Frontend – DEV MODE
+##  # =========================
+#  paras-client:
+#    volumes:
+#      - ./client:/app
+#    environment:
+#      - NODE_ENV=development
+#      - CHOKIDAR_USEPOLLING=true
+#    command: npm start
+#    ports:
+#      - "4010:3000"

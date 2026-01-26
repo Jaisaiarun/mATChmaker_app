@@ -71,8 +71,8 @@ const SubmitTTE = () => {
 
         try {
             const formData = new FormData();
-            formData.append('fileA', fileA);
-            formData.append('fileB', fileB);
+            formData.append('reference_file', fileA);
+            formData.append('input_file', fileB);
 
             const response = await fetch('/api/submit_tte', {
                 method: 'POST',
@@ -118,7 +118,7 @@ const SubmitTTE = () => {
             {/* First file */}
             <Box sx={{mb: 3}}>
                 <Typography gutterBottom>
-                    Upload first input file
+                    Upload Reference Genbank file
                 </Typography>
                 <Input
                     type="file"
@@ -130,7 +130,7 @@ const SubmitTTE = () => {
             {/* Second file */}
             <Box sx={{mb: 4}}>
                 <Typography gutterBottom>
-                    Upload second input file
+                    Upload Input Genbank file
                 </Typography>
                 <Input
                     type="file"

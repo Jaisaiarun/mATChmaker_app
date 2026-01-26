@@ -1,7 +1,19 @@
 import React, {useEffect, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {toast} from 'react-toastify';
-import {Box, Divider, IconButton, Typography} from '@mui/material';
+import {
+    Box,
+    Divider,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
+} from '@mui/material';
 import {FaCopy, FaDownload} from 'react-icons/fa';
 
 import Loading from '../components/Loading';
@@ -146,6 +158,11 @@ const Results = () => {
     }
     ;
 
+    const shortFileName = (name) => {
+        if (!name) return "";
+        return name.replace(/^[^_]+_[^_]+_/, "");
+    };
+
     // render results if available
     return (
         <Box
@@ -206,9 +223,9 @@ const Results = () => {
                     {/*    In total, {results.length} prediction(s) were made. The tiles below show the predictions for*/}
                     {/*    each domain. You can scroll horizontally to view all predictions.*/}
                     {/*</Typography>*/}
-                    <Typography variant='body1' gutterBottom>
-                        In total, {results.length} result item(s) were produced.
-                    </Typography>
+                    {/*<Typography variant='body1' gutterBottom>*/}
+                    {/*    In total, {results.length} result item(s) were produced.*/}
+                    {/*</Typography>*/}
 
                     <Typography variant='body1' gutterBottom>
                         You can download the results as a JSON file using the download button above next to the header.
@@ -252,23 +269,99 @@ const Results = () => {
                     <ResultTile key={index} result={result}/>
                 ))}
 
-                {jobType === 'tte' && results.map((r, index) => (
-                    <Box
-                        key={index}
+                {jobType === 'tte' && (
+                    <TableContainer
+                        component={Paper}
                         sx={{
-                            border: '1px solid #ddd',
-                            borderRadius: '8px',
-                            padding: '16px',
-                            minWidth: '300px',
+                            minWidth: 1100,
+                            maxHeight: 600,
+                            borderRadius: 2,
+                            boxShadow: 2
                         }}
                     >
-                        <Typography variant="h6">{r.file}</Typography>
-                        <Typography>Accession: {r.accession}</Typography>
-                        <Typography>Locus: {r.locus}</Typography>
-                        <Typography>Length: {r.length}</Typography>
-                        <Typography>Description: {r.description}</Typography>
-                    </Box>
-                ))}
+                        <Table stickyHeader size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell><strong>File</strong></TableCell>
+                                    <TableCell><strong>File Locus</strong></TableCell>
+                                    <TableCell><strong>Region ID</strong></TableCell>
+                                    <TableCell><strong>Monomer Pairs</strong></TableCell>
+                                    <TableCell><strong>CDS Locus Tag</strong></TableCell>
+                                    <TableCell><strong>TTE Length</strong></TableCell>
+                                    <TableCell><strong>Similarity</strong></TableCell>
+                                    <TableCell><strong>TTE Sequence</strong></TableCell>
+                                </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                                {results.map((r, index) => {
+                                    // Clean filename (remove UUID prefixes)
+                                    const cleanFileName = r.file.replace(
+                                        /^[a-f0-9-]+_[AB]_/,
+                                        ""
+                                    );
+
+                                    return (
+                                        <TableRow key={index} hover>
+                                            <TableCell>{cleanFileName}</TableCell>
+
+                                            <TableCell>{r.file_locus}</TableCell>
+
+                                            <TableCell>{r.region_id}</TableCell>
+
+                                            <TableCell sx={{maxWidth: 200}}>
+                                                {r.monomer_pairs || "-"}
+                                            </TableCell>
+
+                                            <TableCell>{r.CDS_locus_tag || "-"}</TableCell>
+
+                                            <TableCell align="center">
+                                                {r.tte_len}
+                                            </TableCell>
+
+                                            {/* Similarity cell */}
+                                            <TableCell
+                                                align="center"
+                                                sx={{
+                                                    fontWeight: "bold",
+                                                    color:
+                                                        r.similarity === "reference"
+                                                            ? "text.secondary"
+                                                            : typeof r.similarity === "number"
+                                                                ? r.similarity >= 80
+                                                                    ? "green"
+                                                                    : r.similarity >= 50
+                                                                        ? "orange"
+                                                                        : "red"
+                                                                : "text.disabled"
+                                                }}
+                                            >
+                                                {r.similarity === "reference"
+                                                    ? "reference"
+                                                    : typeof r.similarity === "number"
+                                                        ? `${r.similarity.toFixed(2)} %`
+                                                        : "-"}
+                                            </TableCell>
+
+                                            {/* Sequence cell */}
+                                            <TableCell
+                                                sx={{
+                                                    maxWidth: 350,
+                                                    fontFamily: "monospace",
+                                                    fontSize: "0.75rem",
+                                                    whiteSpace: "pre-wrap",
+                                                    wordBreak: "break-all",
+                                                }}
+                                            >
+                                                {r.tte_seq}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
 
             </Box>
         </Box>
