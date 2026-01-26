@@ -602,8 +602,8 @@ const AnnotationEditor = () => {
                 minHeight='80vh'
             >
                 <Loading
-                    frame1='paras_loading_1.png'
-                    frame2='paras_loading_2.png'
+                    frame1='Logo_trans_1.png'
+                    frame2='Logo_trans_1.png'
                 />
                 <p>Extracting A-domains and making PARAS predictions...</p>
             </Box>

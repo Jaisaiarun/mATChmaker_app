@@ -71,3 +71,9 @@ docker compose -p paras down
 
 - uvicorn - better for development
 - gunicorn - better for production
+
+## To Do :
+- add filters for table , for sorting and filtering
+- get access to to database and also to raven cluster
+- better monomer pairings
+- paras annotations as a seperate asdomain in genebank file 

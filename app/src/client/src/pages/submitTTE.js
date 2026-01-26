@@ -1,14 +1,15 @@
 import React, {useState} from 'react';
 import {toast} from 'react-toastify';
-import {Box, Button, CircularProgress, Divider, Input, Typography} from '@mui/material';
+import {Box, Button, CircularProgress, Divider, IconButton, Input, Typography} from '@mui/material';
+import {FaTrash} from 'react-icons/fa';
 
 const SubmitTTE = () => {
     // loading state
     const [isLoading, setIsLoading] = useState(false);
 
     // two required input files
-    const [fileA, setFileA] = useState(null);
-    const [fileB, setFileB] = useState(null);
+    const [referenceFile, setFileA] = useState(null);
+    const [inputFiles, setInputFiles] = useState([]);
 
     // refresh page
     const handleRefresh = () => {
@@ -42,28 +43,33 @@ const SubmitTTE = () => {
     };
 
 
-    const handleFileBUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) {
-            setFileB(null);
-            return;
-        }
-
-        if (!isGenBankFile(file)) {
-            toast.error('Only .gbk or .gb files are allowed for TTE input.');
-            e.target.value = null;
-            setFileB(null);
-            return;
-        }
-
-        setFileB(file);
+    const handleInputFilesUpload = (e) => {
+        const incoming = Array.from(e.target.files);
+        const existingNames = new Set(inputFiles.map(f => f.name));
+        const accepted = incoming.filter(file => {
+            if (!isGenBankFile(file)) {
+                toast.warn(`Skipped "${file.name}": not .gb/.gbk`);
+                return false;
+            }
+            if (existingNames.has(file.name)) {
+                toast.warn(`Skipped "${file.name}": already added`);
+                return false;
+            }
+            return true;
+        });
+        if (accepted.length) setInputFiles(prev => [...prev, ...accepted]);
+        e.target.value = null; // allow re-adding same filename after removal
     };
+
+    const handleRemoveInputFile = (name) => {
+        setInputFiles(prev => prev.filter(f => f.name !== name));
+    }
 
 
     // submit handler
     const handleSubmit = async () => {
-        if (!fileA || !fileB) {
-            toast.error('Please upload both input files.');
+        if (!referenceFile || inputFiles.length === 0) {
+            toast.error('Please upload both input and reference Files.');
             return;
         }
 
@@ -71,19 +77,31 @@ const SubmitTTE = () => {
 
         try {
             const formData = new FormData();
-            formData.append('reference_file', fileA);
-            formData.append('input_file', fileB);
+            formData.append('reference_file', referenceFile);
+            inputFiles.forEach(f => formData.append('input_files[]', f));
 
             const response = await fetch('/api/submit_tte', {
                 method: 'POST',
                 body: formData
             });
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok!');
+            const text = await response.text();
+
+            let json;
+            try {
+                json = JSON.parse(text);
+            } catch (e) {
+                console.error('Backend returned HTML/text instead of JSON:', text);
+                toast.error(text.slice(0, 300));
             }
 
-            const json = await response.json();
+            if (!response.ok) {
+                toast.error(json.message || 'Request failed');
+            }
+
+            if (!response.ok) {
+                 toast.error(json.message,' Network response was not ok!');
+            }
 
             if (json.status === 'success') {
                 const jobId = json.payload.jobId;
@@ -93,11 +111,13 @@ const SubmitTTE = () => {
             } else {
                 toast.error(json.message);
             }
-        } catch (error) {
-            console.error('Error:', error);
-            toast.error(error.message);
-        }
 
+        } catch (error) {
+            console.error('Console Error:',error);
+            toast.error(error.message || 'Submission failed.');
+        } finally {
+            setIsLoading(false);
+        }
         setIsLoading(false);
     };
 
@@ -130,13 +150,21 @@ const SubmitTTE = () => {
             {/* Second file */}
             <Box sx={{mb: 4}}>
                 <Typography gutterBottom>
-                    Upload Input Genbank file
+                    Upload Input Genbank files
                 </Typography>
                 <Input
                     type="file"
-                    inputProps={{accept: '.gb,.gbk'}}
-                    onChange={handleFileBUpload}
+                    inputProps={{accept: '.gb,.gbk', multiple: true}}
+                    onChange={handleInputFilesUpload}
                 />
+                {inputFiles.map(f => (
+                    <Box key={f.name} sx={{display: 'flex', alignItems: 'center', gap: 1, mt: 0.5}}>
+                        <Typography variant="body2">{f.name}</Typography>
+                        <IconButton size="small" onClick={() => handleRemoveInputFile(f.name)}>
+                            <FaTrash size={12}/>
+                        </IconButton>
+                    </Box>
+                ))}
             </Box>
 
             {/* Action buttons */}
@@ -153,7 +181,7 @@ const SubmitTTE = () => {
                     variant="contained"
                     color="secondary"
                     onClick={handleSubmit}
-                    disabled={isLoading || !fileA || !fileB}
+                    disabled={isLoading || !referenceFile || inputFiles.length === 0}
                 >
                     {isLoading ? <CircularProgress size={24}/> : 'Submit'}
                 </Button>

@@ -16,6 +16,7 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB
 
 
 @app.before_request
