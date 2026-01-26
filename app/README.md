@@ -56,3 +56,18 @@ docker-compose -p paras up --build --force-recreate --remove-orphans -d
 ```
 
 The app will be available at `https://localhost:4010/`.
+
+
+### Commands
+```# Build the development server image
+docker compose -f .\docker-compose.yml -f .\docker-compose.dev.yml build paras-server
+````
+
+```# Run the development server container
+docker compose -f .\docker-compose.yml -f .\docker-compose.dev.yml up paras-server
+```
+
+## Learning topics:
+
+- uvicorn - better for development
+- gunicorn - better for production

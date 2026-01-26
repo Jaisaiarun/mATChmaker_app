@@ -5,6 +5,7 @@ from flask import Response, jsonify
 from routes.app import app
 from routes.retrieval import blueprint_retrieve
 from routes.submit import blueprint_submit_raw, blueprint_submit_quick
+from routes.submit_tte import blueprint_submit_tte
 from routes.data_annotation import blueprint_annotate_data
 from routes.annotation_editor import (
     blueprint_check_smiles,
@@ -29,6 +30,8 @@ app.register_blueprint(blueprint_get_substrates)
 app.register_blueprint(blueprint_submit_annotations)
 app.register_blueprint(blueprint_check_protein_name)
 app.register_blueprint(blueprint_sql)
+
+app.register_blueprint(blueprint_submit_tte)
 
 
 @app.errorhandler(404)

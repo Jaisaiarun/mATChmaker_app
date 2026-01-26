@@ -219,6 +219,7 @@ def submit_raw() -> Response:
         "status": str(Status.Pending).lower(),
         "message": "Job is pending!",
         "results": [],
+        "job_type" : "paras",
         "timestamp": current_time,
     }
 

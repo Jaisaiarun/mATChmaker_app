@@ -4,6 +4,7 @@ flask-cors
 sqlalchemy
 flask_sqlalchemy
 gunicorn
+uvicorn
 joblib
 apscheduler
 psutil

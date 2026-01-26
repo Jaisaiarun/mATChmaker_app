@@ -1,26 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { Box, IconButton, Divider, Typography } from '@mui/material';
-import { FaDownload, FaCopy } from 'react-icons/fa';
+import React, {useEffect, useState} from 'react';
+import {useParams} from 'react-router-dom';
+import {toast} from 'react-toastify';
+import {Box, Divider, IconButton, Typography} from '@mui/material';
+import {FaCopy, FaDownload} from 'react-icons/fa';
 
 import Loading from '../components/Loading';
 import ResultTile from '../components/ResultTile';
 
 /**
  * Component to display the results of the prediction.
- * 
+ *
  * @returns {React.ReactElement} - The results component.
  */
+
+
+
 const Results = () => {
     // get job ID from URL
-    const { jobId } = useParams();
+    const {jobId} = useParams();
 
     // state to store results
     const [results, setResults] = useState(null);
 
     // state to keep track of loading state
     const [isLoading, setIsLoading] = useState(true);
+
+    // state to store job type
+    const [jobType, setJobType] = useState('paras');
 
     // fetch results from local storage
     useEffect(() => {
@@ -31,49 +37,74 @@ const Results = () => {
                 const response = await fetch(`/api/retrieve/${jobId}`);
                 if (!response.ok) {
                     throw new Error('failed to fetch results');
-                };
+                }
+                ;
 
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    const results = data['payload']['results']
 
-                    // sort all predictions by probability
-                    results.forEach(result => {
-                        result['predictions'].sort((a, b) => b['probability'] - a['probability']);
-                    });
 
-                    // round all probabilities to 2 decimal places
-                    results.forEach(result => {
-                        result['predictions'].forEach(prediction => {
-                            prediction['probability'] = prediction['probability'].toFixed(3);
+                    // const results = data['payload']['results'] // replace original line
+
+                    const payload = data.payload || {};
+                    const results = payload.results || [];
+                    const resolvedJobType = payload.job_type || 'paras';
+                    setJobType(resolvedJobType);
+
+                    // // sort all predictions by probability
+                    // results.forEach(result => {
+                    //     result['predictions'].sort((a, b) => b['probability'] - a['probability']);
+                    // });
+                    //
+                    // // round all probabilities to 2 decimal places
+                    // results.forEach(result => {
+                    //     result['predictions'].forEach(prediction => {
+                    //         prediction['probability'] = prediction['probability'].toFixed(3);
+                    //     });
+                    // });
+
+                    if (resolvedJobType === 'paras') {
+                        results.forEach(result => {
+                            result.predictions?.sort(
+                                (a, b) => b.probability - a.probability
+                            );
+                            result.predictions?.forEach(pred => {
+                                pred.probability = Number(pred.probability).toFixed(3);
+                            });
                         });
-                    });
-                    
+                    }
+
+
                     // set states
                     setResults(results);
                     setIsLoading(false);
                     clearInterval(intervalId);
                 } else if (data.status === 'failure') {
                     throw new Error(data.message);
-                }; // else keep polling
+                }
+                ; // else keep polling
             } catch (error) {
                 toast.error(
                     <>
-                      {error.message}<br /><br />
-                      If you feel this is an error, or if you need assistance, please contact the developers in GitHub issues by selecting 'Report an issue' in the app bar at the top left of this page and posting your issue or question.
+                        {error.message}<br/><br/>
+                        If you feel this is an error, or if you need assistance, please contact the developers in GitHub
+                        issues by selecting 'Report an issue' in the app bar at the top left of this page and posting
+                        your issue or question.
                     </>,
-                    { autoClose: false }
+                    {autoClose: false}
                 );
                 setIsLoading(false);
                 clearInterval(intervalId);
-            };
+            }
+            ;
         };
 
         if (jobId) {
             // poll every second (1000 milliseconds)
             intervalId = setInterval(fetchResult, 1000);
-        };
+        }
+        ;
 
         // clear interval when component unmounts
         return () => clearInterval(intervalId);
@@ -90,14 +121,15 @@ const Results = () => {
                 alignItems='center'
                 minHeight='80vh'
             >
-                <Loading 
-                    frame1='paras_loading_1.png' 
-                    frame2='paras_loading_2.png' 
+                <Loading
+                    frame1='paras_loading_1.png'
+                    frame2='paras_loading_2.png'
                 />
                 <p>Making predictions...</p>
             </Box>
-        );  
-    };
+        );
+    }
+    ;
 
     // render message if no results are found
     if (!results) {
@@ -111,7 +143,8 @@ const Results = () => {
                 <p>No results found for job ID {jobId}</p>
             </Box>
         );
-    };
+    }
+    ;
 
     // render results if available
     return (
@@ -121,31 +154,36 @@ const Results = () => {
             overflow='hidden'
         >
             <Box
-                display='flex' 
-                flexDirection='column' 
-                alignItems='left' 
-                margin={4} 
+                display='flex'
+                flexDirection='column'
+                alignItems='left'
+                margin={4}
             >
 
                 {/* header with job ID and download button */}
-                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+                <Box sx={{display: 'flex', flexDirection: 'row', gap: 1}}>
                     <Typography variant='h4' gutterBottom>
                         Results
                     </Typography>
                     <Box>
 
                         {/* download button */}
-                        <IconButton 
+                        <IconButton
                             onClick={() => {
-                                const blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
+                                // const blob = new Blob([JSON.stringify(results)], {type: 'application/json'});
+                                const blob = new Blob(
+                                    [JSON.stringify({jobType, results}, null, 2)],
+                                    {type: 'application/json'}
+                                );
+
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
                                 a.download = 'results.json';
                                 a.click();
                             }
-                        }>
-                            <FaDownload />
+                            }>
+                            <FaDownload/>
                         </IconButton>
 
                     </Box>
@@ -157,27 +195,32 @@ const Results = () => {
                             toast.success('Copied the job ID to clipboard!');
                         }}
                     >
-                        <FaCopy size={15} style={{ paddingBottom: '3px' }} />
+                        <FaCopy size={15} style={{paddingBottom: '3px'}}/>
                     </IconButton>
                     {`Job ID: ${jobId}`}
                 </Typography>
-                <Divider />
+                <Divider/>
 
-                <Box sx={{ mt: 4 }}>
+                <Box sx={{mt: 4}}>
+                    {/*<Typography variant='body1' gutterBottom>*/}
+                    {/*    In total, {results.length} prediction(s) were made. The tiles below show the predictions for*/}
+                    {/*    each domain. You can scroll horizontally to view all predictions.*/}
+                    {/*</Typography>*/}
                     <Typography variant='body1' gutterBottom>
-                        In total, {results.length} prediction(s) were made. The tiles below show the predictions for each domain. You can scroll horizontally to view all predictions.
+                        In total, {results.length} result item(s) were produced.
                     </Typography>
+
                     <Typography variant='body1' gutterBottom>
                         You can download the results as a JSON file using the download button above next to the header.
                     </Typography>
                     <Typography variant='body1' gutterBottom>
-                        You can use the job ID to retrieve the results at a later time. All jobs are automatically deleted after 7 days.
+                        You can use the job ID to retrieve the results at a later time. All jobs are automatically
+                        deleted after 7 days.
                     </Typography>
                 </Box>
             </Box>
 
-            
-            
+
             {/* display results in a row, one item per domain with prediction */}
             <Box
                 sx={{
@@ -202,9 +245,31 @@ const Results = () => {
                     },
                 }}
             >
-                {results.map((result, index) => (
-                    <ResultTile key={index} result={result} />
+                {/*{results.map((result, index) => (*/}
+                {/*    <ResultTile key={index} result={result}/>*/}
+                {/*))}*/}
+                {jobType === 'paras' && results.map((result, index) => (
+                    <ResultTile key={index} result={result}/>
                 ))}
+
+                {jobType === 'tte' && results.map((r, index) => (
+                    <Box
+                        key={index}
+                        sx={{
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            minWidth: '300px',
+                        }}
+                    >
+                        <Typography variant="h6">{r.file}</Typography>
+                        <Typography>Accession: {r.accession}</Typography>
+                        <Typography>Locus: {r.locus}</Typography>
+                        <Typography>Length: {r.length}</Typography>
+                        <Typography>Description: {r.description}</Typography>
+                    </Box>
+                ))}
+
             </Box>
         </Box>
     );

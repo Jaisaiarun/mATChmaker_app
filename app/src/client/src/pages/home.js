@@ -112,35 +112,16 @@ const Home = () => {
 
             <Typography variant='body1' align='center' color='textSecondary' gutterBottom>
                 <Box sx={{display: 'flex', alignItems: 'center'}}>
-                    Want to learn more about the research behind PARAS and PARASECT?
+                    Want to learn more NRPS and mATChmaker?
                     <Tooltip title='Opens new tab to bioRxiv.' arrow>
                         <Link
-                            href='https://www.biorxiv.org/content/10.1101/2025.01.08.631717v1'
+                            href='https://2025.igem.wiki/marburg/'
                             underline='hover'
                             target='_blank'
                             sx={{marginLeft: 1, fontWeight: 'bold'}}
                         >
                             <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                                Read our publication
-                                <ExitIcon fontSize='small'/>
-                            </Box>
-                        </Link>
-                    </Tooltip>
-                </Box>
-            </Typography>
-
-            <Typography variant='body1' align='center' color='textSecondary' gutterBottom>
-                <Box sx={{display: 'flex', alignItems: 'center'}}>
-                    Did you find PARAS or PARASECT useful?
-                    <Tooltip title='Opens new tab to bioRxiv.' arrow>
-                        <Link
-                            href='https://www.biorxiv.org/content/10.1101/2025.01.08.631717v1'
-                            underline='hover'
-                            target='_blank'
-                            sx={{marginLeft: 1, fontWeight: 'bold'}}
-                        >
-                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                                Please cite our publication
+                                Visit our iGEM wiki page
                                 <ExitIcon fontSize='small'/>
                             </Box>
                         </Link>
@@ -150,10 +131,10 @@ const Home = () => {
 
             <Typography variant='body1' align='center' color='textSecondary'>
                 <Box sx={{display: 'flex', alignItems: 'center'}}>
-                    Have something to contribute?
+                    Github Page for mATChmaker
                     <Tooltip title='Opens new tab to GitHub.' arrow>
                         <Link
-                            href='https://github.com/bthedragonmaster/parasect'
+                            href='https://github.com/Jaisaiarun/mATChmaker-iGEM-Marburg-2025'
                             target='_blank'
                             underline='hover'
                             sx={{marginLeft: 1, fontWeight: 'bold'}}
