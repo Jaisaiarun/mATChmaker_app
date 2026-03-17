@@ -6,7 +6,9 @@ from routes.app import app
 from routes.retrieval import blueprint_retrieve
 from routes.submit import blueprint_submit_raw, blueprint_submit_quick
 from routes.submit_tte import blueprint_submit_tte
+from routes.submit_paras_annotation import blueprint_paras_annotation
 from routes.data_annotation import blueprint_annotate_data
+from routes.file_download import blueprint_file_download
 from routes.annotation_editor import (
     blueprint_check_smiles,
     blueprint_check_substrate_name,
@@ -16,6 +18,7 @@ from routes.annotation_editor import (
     blueprint_check_domain_name,
 )
 from routes.sql import blueprint_sql
+
 
 from parasect.version import get_version
 
@@ -30,8 +33,9 @@ app.register_blueprint(blueprint_get_substrates)
 app.register_blueprint(blueprint_submit_annotations)
 app.register_blueprint(blueprint_check_protein_name)
 app.register_blueprint(blueprint_sql)
-
 app.register_blueprint(blueprint_submit_tte)
+app.register_blueprint(blueprint_paras_annotation)
+app.register_blueprint(blueprint_file_download)
 
 
 @app.errorhandler(404)

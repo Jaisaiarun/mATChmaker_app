@@ -5,15 +5,14 @@
 import atexit
 import logging
 import os
+import threading
 import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from flask import Flask, request
 
-
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB
@@ -43,7 +42,6 @@ app.config["ENV"] = os.getenv("FLASK_ENV", "production")  # defaults to "product
 app.config["DEBUG"] = app.config["ENV"] == "development"
 print("starting app in environment:", app.config["ENV"])
 print("Debug mode is:", app.debug)
-
 
 if app.config["ENV"] == "production":
     print("production environment detected")
@@ -77,7 +75,6 @@ scheduler.add_job(
     name="clear job results every week",
     replace_existing=True,
 )
-
 
 # shut down the scheduler when exiting the app
 atexit.register(lambda: scheduler.shutdown())

@@ -1,31 +1,33 @@
 # -*- coding: utf-8 -*-
 
 """
-Routes for submitting TTE (two-GenBank-file) jobs.
-Currently uses dummy parsing logic.
+Routes for submitting TTE jobs.
 """
 
 import os
+import subprocess
+import tempfile
 import threading
 import time
 import uuid
-from typing import Dict, Any
-import tempfile
-import subprocess
+from pathlib import Path
+from typing import Any
+import re
+
 from Bio import AlignIO
 from Bio import SeqIO
-from flask import Blueprint, request, Response
+from flask import Blueprint, request
 from werkzeug.utils import secure_filename
 
 from .app import app
 from .common import ResponseData, Status
 from .constants import TEMP_DIR
-from pathlib import Path
 
 # Blueprint for TTE
 blueprint_submit_tte = Blueprint("submit_tte", __name__)
 
-#TODO: Add a checkbutton to enable paras prediction on the genebank files uploaded
+
+# TODO: Add a checkbutton to enable paras prediction on the genebank files uploaded
 ####################################################################################################
 # Background worker
 ####################################################################################################
@@ -187,6 +189,14 @@ def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) 
     try:
         results = []
 
+        total_input_files = len(input_file_paths)
+        app.config["JOB_RESULTS"][job_id]["progress"] = {
+            "phase": "extracting_reference",
+            "message": f"Extracting TTE from reference file...",
+            "current": 0,
+            "total": total_input_files,
+        }
+
         ref_records = get_tte_records(Path(reference_file_path))
         for row in ref_records:
             row["similarity"] = "reference"
@@ -194,9 +204,28 @@ def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) 
 
         results.extend(ref_records)
 
-        for input_path in input_file_paths:
-            print(input_path)
+        for file_idx,input_path in enumerate(input_file_paths):
+            clean_fname = re.sub(r'^[a-f0-9\-]+_[AB]\d*_', '', input_path)
+
+            app.config["JOB_RESULTS"][job_id]["progress"] = {
+                "phase": "comparing",
+                "message": f"Comparing {clean_fname}...",
+                "current": clean_fname,
+                "total": total_input_files,
+                "current_file": clean_fname,
+            }
             input_records = get_tte_records(Path(input_path))
+
+            app.config["JOB_RESULTS"][job_id]["progress"] = {
+                "phase": "similarity",
+                "message": f"Computing similarity for {clean_fname}...",
+                "current": file_idx,
+                "total": total_input_files,
+                "current_file": clean_fname,
+                "tte_count": len(input_records),
+            }
+
+
             for row in input_records:
                 row["role"] = "input"
                 max_sim = None

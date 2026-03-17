@@ -34,7 +34,7 @@ const Loading = ({ frame1, frame2 }) => {
             }}
         >
             <img 
-                width='300px'
+                width='500px'
                 src={`${process.env.PUBLIC_URL}/${currentImage}`} 
                 alt='Loading...' 
             />

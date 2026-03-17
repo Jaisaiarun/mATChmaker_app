@@ -37,7 +37,18 @@ const Results = () => {
     const [selectedMonomers, setSelectedMonomers] = useState(new Set());
     const [monomerFilterInitialized, setMonomerFilterInitialized] = useState(false);
     const [showMonomerFilter, setShowMonomerFilter] = useState(false);
+    const [annotatedFile, setAnnotatedFile] = useState(null);
+    const [progress, setProgress] = useState(null);
+    const [nowTs, setNowTs] = useState(Date.now());
 
+    // live clock for elapsed loading time
+    useEffect(() => {
+        if (!isLoading || jobType !== 'paras_annotation') return;
+        const timer = setInterval(() => setNowTs(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, [isLoading, jobType]);
+
+    // ── Poll for results ──────────────────────────────────────────────────
     useEffect(() => {
         let intervalId;
 
@@ -50,12 +61,12 @@ const Results = () => {
 
                 if (data.status === 'success') {
                     const payload = data.payload || {};
-                    const results = payload.results || [];
+                    const rawResults = payload.results || [];
                     const resolvedJobType = payload.job_type || 'paras';
                     setJobType(resolvedJobType);
 
                     if (resolvedJobType === 'paras') {
-                        results.forEach(result => {
+                        rawResults.forEach(result => {
                             result.predictions?.sort((a, b) => b.probability - a.probability);
                             result.predictions?.forEach(pred => {
                                 pred.probability = Number(pred.probability).toFixed(3);
@@ -63,11 +74,21 @@ const Results = () => {
                         });
                     }
 
-                    setResults(results);
+                    if (payload.annotated_file) setAnnotatedFile(payload.annotated_file);
+                    if (payload.progress) setProgress(payload.progress);
+
+                    setResults(rawResults);
                     setIsLoading(false);
                     clearInterval(intervalId);
+
+                } else if (data.status === 'pending') {
+                    if (data.payload?.job_type) setJobType(data.payload.job_type);
+                    if (data.payload?.progress) setProgress(data.payload.progress);
+
                 } else if (data.status === 'failure') {
-                    throw new Error(data.message);
+                    toast.error(data.message);
+                    setIsLoading(false);
+                    clearInterval(intervalId);
                 }
             } catch (error) {
                 toast.error(
@@ -85,13 +106,14 @@ const Results = () => {
         };
 
         if (jobId) {
+            fetchResult();
             intervalId = setInterval(fetchResult, 1000);
         }
 
         return () => clearInterval(intervalId);
     }, [jobId]);
 
-    // Initialize monomer filter when TTE results arrive
+    // ── Monomer filter init ───────────────────────────────────────────────
     useEffect(() => {
         if (results && jobType === 'tte' && !monomerFilterInitialized) {
             const allMonomers = new Set();
@@ -107,6 +129,24 @@ const Results = () => {
             setMonomerFilterInitialized(true);
         }
     }, [results, jobType, monomerFilterInitialized]);
+
+    // ─────────────────────────────────────────────────────────────────────
+    // ALL hooks before early returns
+    // ─────────────────────────────────────────────────────────────────────
+
+    const uniqueMonomers = useMemo(() => {
+        if (!results || jobType !== 'tte') return [];
+        const monomers = new Set();
+        results.forEach(r => {
+            if (r.monomer_pairs) {
+                r.monomer_pairs.split(' | ').forEach(m => {
+                    const trimmed = m.trim();
+                    if (trimmed) monomers.add(trimmed);
+                });
+            }
+        });
+        return Array.from(monomers).sort();
+    }, [results, jobType]);
 
     const filteredAndSortedResults = useMemo(() => {
         if (!results || jobType !== 'tte') return results || [];
@@ -131,31 +171,77 @@ const Results = () => {
         return filtered;
     }, [results, jobType, selectedMonomers, sortDirection]);
 
+    const groupedAnnotationResults = useMemo(() => {
+        if (!results || jobType !== 'paras_annotation') return [];
+
+        const groups = {};
+        results.forEach(r => {
+            if (!groups[r.domain_id]) groups[r.domain_id] = [];
+            groups[r.domain_id].push(r);
+        });
+
+        return Object.entries(groups)
+            .map(([domain_id, rows]) => {
+                const sorted = [...rows].sort((a, b) =>
+                    sortDirection === 'desc' ? b.score - a.score : a.score - b.score
+                );
+                return {domain_id, rows: sorted, topScore: sorted[0]?.score ?? -1};
+            })
+            .sort((a, b) =>
+                sortDirection === 'desc'
+                    ? b.topScore - a.topScore
+                    : a.topScore - b.topScore
+            );
+    }, [results, jobType, sortDirection]);
+
+    const loadingElapsedSeconds = useMemo(() => {
+        if (!progress?.started_at) return 0;
+        return Math.max(0, Math.floor((nowTs - progress.started_at * 1000) / 1000));
+    }, [progress, nowTs]);
+
+    // ── Download helpers ──────────────────────────────────────────────────
+
     const downloadTteCsv = () => {
         const headers = ['File', 'File Locus', 'Region ID', 'Monomer Pairs',
             'CDS Locus Tag', 'TTE Length', 'Similarity', 'TTE Sequence'];
         const rows = filteredAndSortedResults.map(r => {
-            const cleanFileName = r.file.replace(/^[a-f0-9-]+_[AB]_/, '');
+            const cleanFileName = r.file.replace(/^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/, '');
             const similarity = r.similarity === 'reference'
                 ? 'reference'
-                : typeof r.similarity === 'number'
-                    ? r.similarity.toFixed(2)
-                    : '';
+                : typeof r.similarity === 'number' ? r.similarity.toFixed(2) : '';
             return [cleanFileName, r.file_locus || '', r.region_id || '',
                 r.monomer_pairs || '', r.CDS_locus_tag || '', r.tte_len || '',
                 similarity, r.tte_seq || ''];
         });
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row =>
-                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-            )
-        ].join('\n');
-        const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
+        const csv = [headers, ...rows]
+            .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
         const a = document.createElement('a');
         a.href = url;
         a.download = 'tte_results.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const downloadAnnotationCsv = () => {
+        const headers = ['Domain ID', 'Locus Tag', 'Existing Substrate',
+            'Substrate', 'Substrate Code', 'Score (%)'];
+        const rows = (results || []).map(r => [
+            r.domain_id || '',
+            r.locus_tag || '',
+            r.existing_specificity || '',
+            r.substrate || '',
+            r.substrate_3letter || '',
+            (r.score * 100).toFixed(1),
+        ]);
+        const csv = [headers, ...rows]
+            .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'paras_annotation.csv';
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -172,25 +258,84 @@ const Results = () => {
     const handleSelectAllMonomers = () => setSelectedMonomers(new Set(uniqueMonomers));
     const handleClearAllMonomers = () => setSelectedMonomers(new Set());
 
-    const uniqueMonomers = useMemo(() => {
-        if (!results || jobType !== 'tte') return [];
-        const monomers = new Set();
-        results.forEach(r => {
-            if (r.monomer_pairs) {
-                r.monomer_pairs.split(' | ').forEach(m => {
-                    const trimmed = m.trim();
-                    if (trimmed) monomers.add(trimmed);
-                });
-            }
-        });
-        return Array.from(monomers).sort();
-    }, [results, jobType]);
+    // ── Early returns ─────────────────────────────────────────────────────
 
     if (isLoading) {
+        const pct = progress?.total > 0
+            ? Math.round((progress.current / progress.total) * 100)
+            : null;
+
         return (
-            <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center' minHeight='80vh'>
+            <Box display='flex' flexDirection='column' justifyContent='center'
+                 alignItems='center' minHeight='90vh' gap={2} padding={4}>
+
                 <Loading frame1='Logo_trans_1.png' frame2='Logo_trans_2.png'/>
-                <p>Making predictions...</p>
+
+                <Typography variant='h6' color='text.secondary'>
+                    {jobType !== 'paras_annotation' && 'Making predictions...'}
+                    {jobType === 'paras_annotation' && !progress && 'Starting...'}
+                    {jobType === 'paras_annotation' && progress?.phase === 'loading_model' && 'Loading PARAS model...'}
+                    {jobType === 'paras_annotation' && progress?.phase === 'running' && 'Running PARAS predictions...'}
+                    {jobType === 'paras_annotation' && progress?.phase === 'saving' && 'Saving annotated GenBank file...'}
+                </Typography>
+
+                {jobType === 'paras_annotation' && progress?.phase === 'running' && (
+                    <Typography variant='body2' color='text.secondary'>
+                        Domain {progress.current} of {progress.total}: {progress.current_domain}
+                    </Typography>
+                )}
+
+                {jobType === 'paras_annotation' && (
+                    <Box sx={{width: '100%', maxWidth: 400}}>
+                        <Box sx={{
+                            width: '100%',
+                            height: 10,
+                            borderRadius: 5,
+                            bgcolor: 'divider',
+                            overflow: 'hidden',
+                            position: 'relative',
+                        }}>
+                            {progress?.phase === 'loading_model' ? (
+                                <Box
+                                    sx={{
+                                        width: '35%',
+                                        height: '100%',
+                                        borderRadius: 5,
+                                        bgcolor: 'secondary.main',
+                                        position: 'absolute',
+                                        animation: 'loading-slide 1.4s ease-in-out infinite',
+                                        '@keyframes loading-slide': {
+                                            '0%': {left: '-35%'},
+                                            '100%': {left: '100%'},
+                                        },
+                                    }}
+                                />
+                            ) : (
+                                <Box
+                                    sx={{
+                                        width: `${pct ?? 0}%`,
+                                        height: '100%',
+                                        borderRadius: 5,
+                                        bgcolor: 'secondary.main',
+                                        transition: 'width 0.4s ease',
+                                    }}
+                                />
+                            )}
+                        </Box>
+
+                        <Typography
+                            variant='caption'
+                            color='text.secondary'
+                            sx={{mt: 0.5, display: 'block', textAlign: 'center'}}
+                        >
+                            {progress?.phase === 'loading_model'
+                                ? `Preparing model... ${loadingElapsedSeconds}s`
+                                : pct !== null
+                                    ? `${pct}%`
+                                    : 'Starting...'}
+                        </Typography>
+                    </Box>
+                )}
             </Box>
         );
     }
@@ -203,51 +348,53 @@ const Results = () => {
         );
     }
 
+    // ── Main render ───────────────────────────────────────────────────────
     return (
         <Box display='flex' flexDirection='column' overflow='hidden'>
             <Box display='flex' flexDirection='column' alignItems='left' margin={4}>
 
-                {/* Header with job ID and download button */}
-                <Box sx={{display: 'flex', flexDirection: 'row', gap: 1}}>
+                <Box sx={{display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center'}}>
                     <Typography variant='h4' gutterBottom>Results</Typography>
-                    <Box>
-                        <Tooltip title="Download as JSON">
-                            <IconButton
-                                onClick={() => {
-                                    const blob = new Blob(
-                                        [JSON.stringify({jobType, results}, null, 2)],
-                                        {type: 'application/json'}
-                                    );
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = 'results.json';
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                }}
-                            >
-                                <FaDownload/>
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                </Box>
 
-                {/* ── NEW: CSV download button (TTE only) ── */}
-                {jobType === 'tte' && (
-                    <Tooltip title="Download table as CSV">
-                        <IconButton onClick={downloadTteCsv}>
-                            <FaFileCsv/>
+                    <Tooltip title="Download as JSON">
+                        <IconButton onClick={() => {
+                            const blob = new Blob(
+                                [JSON.stringify({jobType, results}, null, 2)],
+                                {type: 'application/json'}
+                            );
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'results.json';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}>
+                            <FaDownload/>
                         </IconButton>
                     </Tooltip>
-                )}
+
+                    {jobType === 'tte' && (
+                        <Tooltip title="Download table as CSV">
+                            <IconButton onClick={downloadTteCsv}>
+                                <FaFileCsv/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
+                    {jobType === 'paras_annotation' && (
+                        <Tooltip title="Download predictions as CSV">
+                            <IconButton onClick={downloadAnnotationCsv}>
+                                <FaFileCsv/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
 
                 <Typography variant='body1' gutterBottom>
-                    <IconButton
-                        onClick={() => {
-                            navigator.clipboard.writeText(jobId);
-                            toast.success('Copied the job ID to clipboard!');
-                        }}
-                    >
+                    <IconButton onClick={() => {
+                        navigator.clipboard.writeText(jobId);
+                        toast.success('Copied the job ID to clipboard!');
+                    }}>
                         <FaCopy size={15} style={{paddingBottom: '3px'}}/>
                     </IconButton>
                     {`Job ID: ${jobId}`}
@@ -265,30 +412,122 @@ const Results = () => {
                 </Box>
             </Box>
 
-            <Box
-                sx={{
-                    overflowY: 'auto',
-                    overflowX: 'auto',
-                    backgroundColor: 'white.main',
-                    display: 'flex',
-                    gap: '20px',
-                    paddingLeft: '30px',
-                    paddingRight: '30px',
-                    paddingBottom: '20px',
-                    '&::-webkit-scrollbar': {display: 'block'},
-                    '&::-webkit-scrollbar-thumb': {backgroundColor: '#ceccca', borderRadius: '10px'},
-                }}
-            >
-                {/* PARAS results */}
+            <Box sx={{
+                overflowY: 'auto',
+                overflowX: 'auto',
+                backgroundColor: 'white.main',
+                display: 'flex',
+                gap: '20px',
+                paddingLeft: '30px',
+                paddingRight: '30px',
+                paddingBottom: '20px',
+                '&::-webkit-scrollbar': {display: 'block'},
+                '&::-webkit-scrollbar-thumb': {backgroundColor: '#ceccca', borderRadius: '10px'},
+            }}>
+
                 {jobType === 'paras' && results.map((result, index) => (
                     <ResultTile key={index} result={result}/>
                 ))}
 
-                {/* TTE results */}
-                {jobType === 'tte' && (
+                {jobType === 'paras_annotation' && (
                     <Box sx={{width: '100%'}}>
 
-                        {/* ── NEW: Monomer filter panel ── */}
+                        {annotatedFile && (
+                            <Box sx={{mb: 3, display: 'flex', alignItems: 'center', gap: 2}}>
+                                <Typography variant="body1">Annotated GenBank file ready:</Typography>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<FaDownload/>}
+                                    onClick={() => window.open(
+                                        `/api/download_file/${jobId}/${encodeURIComponent(annotatedFile)}`,
+                                        '_blank'
+                                    )}
+                                >
+                                    {annotatedFile}
+                                </Button>
+                            </Box>
+                        )}
+
+                        <TableContainer component={Paper} sx={{borderRadius: 2, boxShadow: 2}}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell><strong>Domain ID</strong></TableCell>
+                                        <TableCell><strong>Existing Substrate</strong></TableCell>
+                                        <TableCell><strong>Substrate</strong></TableCell>
+                                        <TableCell><strong>Code</strong></TableCell>
+                                        <TableCell align="right">
+                                            <TableSortLabel
+                                                active={true}
+                                                direction={sortDirection}
+                                                onClick={() =>
+                                                    setSortDirection(prev =>
+                                                        prev === 'desc' ? 'asc' : 'desc'
+                                                    )
+                                                }
+                                            >
+                                                <strong>Score</strong>
+                                            </TableSortLabel>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {groupedAnnotationResults.map((group) => (
+                                        <React.Fragment key={group.domain_id}>
+                                            <TableRow sx={{backgroundColor: 'background.default'}}>
+                                                <TableCell
+                                                    colSpan={5}
+                                                    sx={{fontWeight: 'bold', color: 'text.secondary'}}
+                                                >
+                                                    {group.domain_id}
+                                                </TableCell>
+                                            </TableRow>
+
+                                            {group.rows.map((row, idx) => (
+                                                <TableRow
+                                                    key={`${group.domain_id}-${row.substrate_3letter}-${idx}`}
+                                                    hover
+                                                >
+                                                    <TableCell sx={{
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '0.78rem',
+                                                        color: 'text.secondary',
+                                                    }}>
+                                                        {row.domain_id}
+                                                    </TableCell>
+                                                    <TableCell>{row.existing_specificity || '–'}</TableCell>
+                                                    <TableCell>{row.substrate}</TableCell>
+                                                    <TableCell>
+                                                        <Chip
+                                                            label={row.substrate_3letter}
+                                                            size="small"
+                                                            variant="outlined"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        sx={{
+                                                            fontWeight: 'bold',
+                                                            color: row.score >= 0.8 ? 'green'
+                                                                : row.score >= 0.5 ? 'orange'
+                                                                    : 'red',
+                                                        }}
+                                                    >
+                                                        {(row.score * 100).toFixed(1)} %
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </React.Fragment>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                )}
+
+                {jobType === 'tte' && (
+                    <Box sx={{width: '100%'}}>
                         {uniqueMonomers.length > 0 && (
                             <Box sx={{mb: 2}}>
                                 <Button
@@ -325,8 +564,8 @@ const Results = () => {
                                                         <Chip
                                                             label={monomer}
                                                             size="small"
-                                                            variant={selectedMonomers.has(monomer) ? "filled" : "outlined"}
-                                                            color={selectedMonomers.has(monomer) ? "secondary" : "default"}
+                                                            variant={selectedMonomers.has(monomer) ? 'filled' : 'outlined'}
+                                                            color={selectedMonomers.has(monomer) ? 'secondary' : 'default'}
                                                         />
                                                     }
                                                 />
@@ -337,12 +576,10 @@ const Results = () => {
                             </Box>
                         )}
 
-                        {/* ── NEW: Row count ── */}
                         <Typography variant="body2" sx={{mb: 1}} color="text.secondary">
                             Showing {filteredAndSortedResults.length} of {results.length} results
                         </Typography>
 
-                        {/* Table */}
                         <TableContainer
                             component={Paper}
                             sx={{minWidth: 1100, maxHeight: 600, borderRadius: 2, boxShadow: 2}}
@@ -356,8 +593,6 @@ const Results = () => {
                                         <TableCell><strong>Monomer Pairs</strong></TableCell>
                                         <TableCell><strong>CDS Locus Tag</strong></TableCell>
                                         <TableCell><strong>TTE Length</strong></TableCell>
-
-                                        {/* ── NEW: Sortable similarity header ── */}
                                         <TableCell align="center">
                                             <TableSortLabel
                                                 active={true}
@@ -369,57 +604,51 @@ const Results = () => {
                                                 <strong>Similarity</strong>
                                             </TableSortLabel>
                                         </TableCell>
-
                                         <TableCell><strong>TTE Sequence</strong></TableCell>
                                     </TableRow>
                                 </TableHead>
-
                                 <TableBody>
-                                    {/* ── CHANGED: filteredAndSortedResults instead of results ── */}
                                     {filteredAndSortedResults.map((r, index) => {
-                                        // const cleanFileName = r.file.replace(/^[a-f0-9-]+_[AB]_/, '');
-                                        const cleanFileName = r.file.replace(/^[a-f0-9-]+_(?:A|B|REF|IN_\d+)_/, '');
+                                        const cleanFileName = r.file.replace(
+                                            /^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/,
+                                            ''
+                                        );
                                         return (
                                             <TableRow key={index} hover>
                                                 <TableCell>{cleanFileName}</TableCell>
                                                 <TableCell>{r.file_locus}</TableCell>
                                                 <TableCell>{r.region_id}</TableCell>
                                                 <TableCell sx={{maxWidth: 200}}>
-                                                    {r.monomer_pairs || '-'}
+                                                    {r.monomer_pairs || '–'}
                                                 </TableCell>
-                                                <TableCell>{r.CDS_locus_tag || '-'}</TableCell>
+                                                <TableCell>{r.CDS_locus_tag || '–'}</TableCell>
                                                 <TableCell align="center">{r.tte_len}</TableCell>
                                                 <TableCell
                                                     align="center"
                                                     sx={{
                                                         fontWeight: 'bold',
-                                                        color:
-                                                            r.similarity === 'reference'
-                                                                ? 'text.secondary'
-                                                                : typeof r.similarity === 'number'
-                                                                    ? r.similarity >= 80
-                                                                        ? 'green'
-                                                                        : r.similarity >= 50
-                                                                            ? 'orange'
-                                                                            : 'red'
-                                                                    : 'text.disabled'
+                                                        color: r.similarity === 'reference'
+                                                            ? 'text.secondary'
+                                                            : typeof r.similarity === 'number'
+                                                                ? r.similarity >= 80 ? 'green'
+                                                                    : r.similarity >= 50 ? 'orange'
+                                                                        : 'red'
+                                                                : 'text.disabled',
                                                     }}
                                                 >
                                                     {r.similarity === 'reference'
                                                         ? 'reference'
                                                         : typeof r.similarity === 'number'
                                                             ? `${r.similarity.toFixed(2)} %`
-                                                            : '-'}
+                                                            : '–'}
                                                 </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        maxWidth: 350,
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '0.75rem',
-                                                        whiteSpace: 'pre-wrap',
-                                                        wordBreak: 'break-all',
-                                                    }}
-                                                >
+                                                <TableCell sx={{
+                                                    maxWidth: 350,
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '0.75rem',
+                                                    whiteSpace: 'pre-wrap',
+                                                    wordBreak: 'break-all',
+                                                }}>
                                                     {r.tte_seq}
                                                 </TableCell>
                                             </TableRow>

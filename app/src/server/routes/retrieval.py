@@ -22,7 +22,12 @@ def retrieve(job_id: str):
     try:
         results = app.config["JOB_RESULTS"][job_id]
         if results["status"] == "pending":
-            return ResponseData(Status.Pending, message="Job is pending!").to_dict()
+            return ResponseData(
+                Status.Pending,
+                message="Job is pending!",
+                payload={"job_type": results.get("job_type", "paras"),
+                         "progress": results.get("progress", {})}
+            ).to_dict()
         elif results["status"] == "failure":
             return ResponseData(Status.Failure, message=results["message"]).to_dict()
         else:

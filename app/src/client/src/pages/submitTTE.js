@@ -85,35 +85,36 @@ const SubmitTTE = () => {
                 body: formData
             });
 
-            const text = await response.text();
+            let json = null;
+            let text = '';
 
-            let json;
             try {
+                text = await response.text();
                 json = JSON.parse(text);
             } catch (e) {
-                console.error('Backend returned HTML/text instead of JSON:', text);
-                toast.error(text.slice(0, 300));
+                console.error('Backend returned non-JSON response:', text);
             }
 
             if (!response.ok) {
-                toast.error(json.message || 'Request failed');
+                if (json?.message) {
+                    toast.error(json.message);
+                } else {
+                    toast.error(`Request failed: ${response.status} ${response.statusText}`);
+                }
+                return;
             }
 
-            if (!response.ok) {
-                 toast.error(json.message,' Network response was not ok!');
-            }
-
-            if (json.status === 'success') {
+            if (json?.status === 'success' && json?.payload?.jobId) {
                 const jobId = json.payload.jobId;
                 window.location.href = `/results/${jobId}`;
-            } else if (json.status === 'warning') {
+            } else if (json?.status === 'warning') {
                 toast.warn(json.message);
             } else {
-                toast.error(json.message);
+                toast.error(json?.message || 'Unexpected response from server.');
             }
 
         } catch (error) {
-            console.error('Console Error:',error);
+            console.error('Console Error:', error);
             toast.error(error.message || 'Submission failed.');
         } finally {
             setIsLoading(false);

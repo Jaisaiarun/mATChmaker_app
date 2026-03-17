@@ -3,14 +3,11 @@
 """Routes for making adenylation domain subtrate specificity predictions on raw input."""
 
 import os
-import threading
 import time
 import uuid
 from typing import Dict
 
-import joblib
 from flask import Blueprint, Response, request, redirect, jsonify
-
 from parasect.api import run_paras, run_parasect, run_paras_for_signatures
 from parasect.core.domain import AdenylationDomain
 from pikachu.general import read_smiles
@@ -20,13 +17,11 @@ from .common import ResponseData, Status
 from .constants import MODEL_DIR, TEMP_DIR
 from .model_loader import ModelSpec, MultiModelLoader
 
-
 # Model registry
 MODEL_PARAS_ALL_SUBSTRATES = os.path.join(MODEL_DIR, "all_substrates_model.paras")
 MODEL_PARAS_COMMON_SUBSTRATES = os.path.join(MODEL_DIR, "model.paras")
 MODEL_PARASECT = os.path.join(MODEL_DIR, "model.parasect")
 MODEL_PARASECT_BACTERIAL = os.path.join(MODEL_DIR, "bacterial_model.parasect")
-
 
 loader = MultiModelLoader({
     "parasAllSubstrates": ModelSpec(name="PARAS (all substrates)", path=MODEL_PARAS_ALL_SUBSTRATES, mmap=True),
@@ -35,6 +30,20 @@ loader = MultiModelLoader({
     "parasectBacterial": ModelSpec(name="PARASECT (bacterial)", path=MODEL_PARASECT_BACTERIAL, mmap=True),
 })
 
+import threading
+import logging
+
+## Preload the models - comment it when yoou want start up to be fast
+# def warm_models():
+#     for key in ["parasAllSubstrates", "parasCommonSubstrates"]:
+#         try:
+#             logging.info("Preloading model: %s", key)
+#             loader.get(key)
+#             logging.info("Finished preloading model: %s", key)
+#         except Exception as e:
+#             logging.exception("Failed to preload model %s: %s", key, e)
+#
+# warm_models()
 
 blueprint_submit_raw = Blueprint("submit_raw", __name__)
 blueprint_submit_quick = Blueprint("submit_quick", __name__)
@@ -128,7 +137,7 @@ def run_prediction_raw(job_id: str, data: Dict[str, str]) -> None:
                     if len(smiles_file_content) > 0:
                         lines = smiles_file_content.strip().split("\n")
                         for line_index, line in enumerate(lines):
-                            
+
                             # skip header line if present
                             if uploaded_substrates_file_has_header and line_index == 0:
                                 continue
@@ -147,12 +156,13 @@ def run_prediction_raw(job_id: str, data: Dict[str, str]) -> None:
                 except Exception as e:
                     msg = f"failed to parse SMILES strings: {str(e)}"
                     raise Exception(msg)
-                
+
                 # if no custom substrates were provided, and also the option to use only uploaded substrates is selected
                 # return with error message that at least one custom substrate must be provided in that case
                 if len(custom_substrate_names) == 0 and use_only_uploaded_substrates:
-                    raise Exception("at least one custom substrate must be provided if 'Use only uploaded substrates' is selected.")
-                
+                    raise Exception(
+                        "at least one custom substrate must be provided if 'Use only uploaded substrates' is selected.")
+
                 # Print excpected feature vector length for debugging
                 print(f"Using model {selected_model} with expected feature vector length {model.n_features_in_}")
 
@@ -219,7 +229,7 @@ def submit_raw() -> Response:
         "status": str(Status.Pending).lower(),
         "message": "Job is pending!",
         "results": [],
-        "job_type" : "paras",
+        "job_type": "paras",
         "timestamp": current_time,
     }
 
@@ -270,13 +280,13 @@ def run_prediction_signature(job_id: str, data: Dict[str, str]) -> None:
             if not isinstance(s, dict):
                 raise Exception("each submissions must be a dictionary")
             if not all(
-                k in s
-                for k in [
-                    "protein_name",
-                    "domain_start",
-                    "domain_end",
-                    "extended_signature",
-                ]
+                    k in s
+                    for k in [
+                        "protein_name",
+                        "domain_start",
+                        "domain_end",
+                        "extended_signature",
+                    ]
             ):
                 raise Exception(
                     (
@@ -374,7 +384,7 @@ def submit_quick() -> Response:
 
     Example URL for production:
     https://paras.bioinformatics.nl/api/submit_quick?signature1=LDQIFDVFVSEMSLIVGGEVNAYGPTETTVEATA&name1=NameA&start1=10&end1=50
-    """        
+    """
     job_id = str(uuid.uuid4())
 
     try:
@@ -406,7 +416,7 @@ def submit_quick() -> Response:
 
         # sort submissions first by domain start, then by protein name
         data["data"]["submissions"] = sorted(
-            data["data"]["submissions"], 
+            data["data"]["submissions"],
             key=lambda x: (x["domain_start"], x["protein_name"])
         )
 
@@ -428,7 +438,7 @@ def submit_quick() -> Response:
             }
 
             threading.Thread(target=run_prediction_signature, args=(job_id, data)).start()
-    
+
     except Exception as e:
         app.config["JOB_RESULTS"][job_id] = {
             "status": str(Status.Failure).lower(),
@@ -444,5 +454,3 @@ def submit_quick() -> Response:
         results_url = f"http://localhost:3000/results/{job_id}"
 
     return redirect(results_url)
-
-        

@@ -74,6 +74,15 @@ const Home = () => {
                 >
                     Start TTE Comparison
                 </Button>
+                 <Button
+                    variant="contained"
+                    color="primary"
+                    size='large'
+                    href="/submit_paras_annotation"
+                    sx={{marginBottom: 3}}
+                >
+                    Annotate GenBank with PARAS
+                </Button>
 
                 <Button
                     variant='contained'

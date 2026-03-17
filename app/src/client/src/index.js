@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem } from '@mui/material';
-import { MdMenu } from 'react-icons/md';
+import {BrowserRouter, Route, Routes, useNavigate} from 'react-router-dom';
+import {createTheme, ThemeProvider} from '@mui/material/styles';
+import {AppBar, IconButton, Menu, MenuItem, Toolbar, Typography} from '@mui/material';
+import {MdMenu} from 'react-icons/md';
 import HomeIcon from '@mui/icons-material/Home';
 import UploadIcon from '@mui/icons-material/Upload';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -24,12 +24,12 @@ import AnnotationEditor from './pages/annotation_editor'
 import QueryDatabase from './pages/query_database'
 
 import SubmitTTE from "./pages/submitTTE";
-
+import SubmitParasAnnotation from './pages/submitParasAnnotation';
 
 
 /**
  * Custom theme for the app.
- * 
+ *
  * @returns {Theme} - The custom theme for the app.
  */
 // const theme = createTheme({
@@ -60,45 +60,45 @@ import SubmitTTE from "./pages/submitTTE";
 // });
 
 const theme = createTheme({
-  palette: {
-    mode: 'light',
+    palette: {
+        mode: 'light',
 
-    primary: {
-      main: '#C9A24D',
-      dark: '#9E7C2F',
-      contrastText: '#2B2B2B',
+        primary: {
+            main: '#C9A24D',
+            dark: '#9E7C2F',
+            contrastText: '#2B2B2B',
+        },
+
+        secondary: {
+            main: '#4F8F8B',
+            contrastText: '#FFFFFF',
+        },
+
+        error: {
+            main: '#8C2D4F', // magenta chain
+        },
+
+        background: {
+            default: '#EFE4C2',
+            paper: '#F9F6EC',
+        },
+
+        text: {
+            primary: '#2B2B2B',
+            secondary: '#6B6255',
+        },
+
+        divider: '#D8CFAE',
     },
 
-    secondary: {
-      main: '#4F8F8B',
-      contrastText: '#FFFFFF',
+    typography: {
+        fontFamily: ['Arial', 'Roboto', 'sans-serif'].join(','),
     },
-
-    error: {
-      main: '#8C2D4F', // magenta chain
-    },
-
-    background: {
-      default: '#EFE4C2',
-      paper: '#F9F6EC',
-    },
-
-    text: {
-      primary: '#2B2B2B',
-      secondary: '#6B6255',
-    },
-
-    divider: '#D8CFAE',
-  },
-
-  typography: {
-    fontFamily: ['Arial', 'Roboto', 'sans-serif'].join(','),
-  },
 });
 
 /**
  * Custom toolbar for the app.
- * 
+ *
  * @returns {React.ReactElement} - The custom toolbar for the app.
  */
 const CustomToolbar = () => {
@@ -110,21 +110,21 @@ const CustomToolbar = () => {
 
     // fetch version from server
     useEffect(() => {
-    fetch('/api/version')
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then((data) => {
-            setVersion(`v${data.version}`);
-        })
-        .catch((error) => {
-            console.error('Failed to fetch version:', error);
-            setVersion('v?');  // Fallback version if fetch fails
-        });
-}, []);
+        fetch('/api/version')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setVersion(`v${data.version}`);
+            })
+            .catch((error) => {
+                console.error('Failed to fetch version:', error);
+                setVersion('v?');  // Fallback version if fetch fails
+            });
+    }, []);
 
     // state to handle menu
     const [anchorEl, setAnchorEl] = useState(null);
@@ -153,11 +153,11 @@ const CustomToolbar = () => {
     };
 
     return (
-        <AppBar position='static' sx={{ backgroundColor: 'primary.main' }}>
+        <AppBar position='static' sx={{backgroundColor: 'primary.main'}}>
             <Toolbar>
                 {/* hamburger Menu Icon */}
-                <IconButton onClick={handleMenuOpen} sx={{ mr: 2}}>
-                    <MdMenu fill='white' />
+                <IconButton onClick={handleMenuOpen} sx={{mr: 2}}>
+                    <MdMenu fill='white'/>
                 </IconButton>
 
                 {/* menu that opens when hamburger icon is clicked */}
@@ -167,44 +167,49 @@ const CustomToolbar = () => {
                     onClose={handleMenuClose}
                 >
                     <MenuItem onClick={() => handleMenuItemClick('/')}>
-                        <HomeIcon sx={{ marginRight: '10px' }} />
+                        <HomeIcon sx={{marginRight: '10px'}}/>
                         Home
                     </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/submit')}>
-                        <UploadIcon sx={{ marginRight: '10px' }} />
+                        <UploadIcon sx={{marginRight: '10px'}}/>
                         Submit
                     </MenuItem>
 
                     <MenuItem onClick={() => handleMenuItemClick("/submit_tte")}>
-                        <UploadIcon sx={{ marginRight: '10px' }} />
-                          TTE Comparison
+                        <UploadIcon sx={{marginRight: '10px'}}/>
+                        TTE Comparison
                     </MenuItem>
-
+                    <MenuItem onClick={() => handleMenuItemClick('/annotate_gbk')}>
+                        <UploadIcon sx={{marginRight: '10px'}}/>
+                        Annotate GenBank (PARAS)
+                    </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/retrieve')}>
-                        <RetrieveIcon sx={{ marginRight: '10px' }} />
+                        <RetrieveIcon sx={{marginRight: '10px'}}/>
                         Retrieve
                     </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/data_annotation')}>
-                        <DatasetIcon sx={{ marginRight: '10px' }} />
+                        <DatasetIcon sx={{marginRight: '10px'}}/>
                         Data annotation
                     </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/query_database')}>
-                        <QueryStatsIcon sx={{ marginRight: '10px' }} />
+                        <QueryStatsIcon sx={{marginRight: '10px'}}/>
                         Query database
                     </MenuItem>
-                    <MenuItem onClick={() => handleExternalLinkClick('https://github.com/BTheDragonMaster/parasect/issues')}>
-                        <GitHubIcon sx={{ marginRight: '10px' }} />
+                    <MenuItem
+                        onClick={() => handleExternalLinkClick('https://github.com/BTheDragonMaster/parasect/issues')}>
+                        <GitHubIcon sx={{marginRight: '10px'}}/>
                         Report an issue
                     </MenuItem>
                 </Menu>
 
                 {/* display name and version next to hamburger */}
-                <Typography 
-                    variant='h6' 
-                    sx={{ marginLeft: '16px' }}
+                <Typography
+                    variant='h6'
+                    sx={{marginLeft: '16px'}}
                 >
-                    <Typography sx={{ color: 'white.main' }}>
-                        mATCmaker {version} (web app: v{process.env.REACT_APP_VERSION ? process.env.REACT_APP_VERSION : 'UNKNOWN'})
+                    <Typography sx={{color: 'white.main'}}>
+                        mATCmaker {version} (web app:
+                        v{process.env.REACT_APP_VERSION ? process.env.REACT_APP_VERSION : 'UNKNOWN'})
                     </Typography>
                 </Typography>
             </Toolbar>
@@ -214,71 +219,79 @@ const CustomToolbar = () => {
 
 /**
  * App routes for the app.
- * 
+ *
  * @returns {React.ReactElement} - The app routes for the app.
  */
-function AppRoutes () {
+function AppRoutes() {
     return (
         <div>
             <Routes>
-                <Route 
-                    path='/' 
-                    element={<Home />}
+                <Route
+                    path='/'
+                    element={<Home/>}
                 />
-                <Route 
-                    path='/submit' 
-                    element={<Submit />}
+                <Route
+                    path='/submit'
+                    element={<Submit/>}
                 />
                 <Route
                     path="/submit_tte"
-                    element={<SubmitTTE />}
+                    element={<SubmitTTE/>}
                 />
-                <Route 
-                    path='/retrieve' 
-                    element={<Retrieve />}
+                <Route
+                    path="/submit_paras_annotation"
+                    element={<SubmitParasAnnotation/>}
                 />
-                <Route 
-                    path='/results/:jobId' 
-                    element={<Results />}
+                <Route
+                    path='/annotate_gbk'
+                    element={<SubmitParasAnnotation/>}
+                />
+                <Route
+                    path='/retrieve'
+                    element={<Retrieve/>}
+                />
+                <Route
+                    path='/results/:jobId'
+                    element={<Results/>}
                 />
                 <Route
                     path='/annotation_editor/:jobId'
-                    element={<AnnotationEditor />}
+                    element={<AnnotationEditor/>}
                 />
                 <Route
                     path='/data_annotation'
-                    element={<DataAnnotation />}
+                    element={<DataAnnotation/>}
                 />
                 <Route
                     path='/query_database'
-                    element={<QueryDatabase />}
+                    element={<QueryDatabase/>}
                 />
-                <Route 
-                    path='*' 
-                    element={<NotFound />}
+                <Route
+                    path='*'
+                    element={<NotFound/>}
                 />
             </Routes>
         </div>
     );
-};
+}
 
 /**
  * Main app component.
- * 
+ *
  * @returns {React.ReactElement} - The main app component.
  */
-function App () {
+function App() {
     return (
         <ThemeProvider theme={theme}>
             <BrowserRouter>
-                <CustomToolbar />
-                <AppRoutes />
-                <Toast />
+                <CustomToolbar/>
+                <AppRoutes/>
+                <Toast/>
             </BrowserRouter>
         </ThemeProvider>
     );
-};
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-root.render(<App />);
+root.render(<App/>);
