@@ -33,7 +33,7 @@ loader = MultiModelLoader({
 import threading
 import logging
 
-## Preload the models - comment it when yoou want start up to be fast
+## Preload the models - comment it when yoou want start *up to be fast
 # def warm_models():
 #     for key in ["parasAllSubstrates", "parasCommonSubstrates"]:
 #         try:

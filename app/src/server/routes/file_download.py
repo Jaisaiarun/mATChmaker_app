@@ -62,6 +62,14 @@ def download_file(job_id: str, filename: str):
     gb_file_paths: dict = job.get("gb_file_paths", {})
     path = gb_file_paths.get(filename)
 
+    # Fallback: the dict may be keyed by "stem::region_id" rather than by filename,
+    # so scan all stored paths and match by basename.
+    if not path:
+        for stored_path in gb_file_paths.values():
+            if os.path.basename(stored_path) == filename:
+                path = stored_path
+                break
+
     if not path or not os.path.isfile(path):
         return ResponseData(Status.Failure, message="File not found.").to_dict(), 404
 

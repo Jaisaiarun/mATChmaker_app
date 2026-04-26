@@ -172,17 +172,14 @@ def run_paras_annotation(job_id: str, input_path: str, model_key: str) -> None:
 
             existing_specificity = get_existing_specificity(feat)
 
-            # annotate GenBank only with top prediction 3-letter code if score >= 0.50
             if preds_sorted:
-                top_pred = preds_sorted[0]
-                top_score = float(top_pred["probability"])
-                top_name = top_pred["substrate_name"]
-                top_code = to_3_letter(top_name)
-
-                if top_score >= 0.50:
-                    feat.qualifiers["specificity_prediction"] = [top_code]
-                elif "specificity_prediction" in feat.qualifiers:
-                    del feat.qualifiers["specificity_prediction"]
+                for i_ind in range(min(3, len(preds_sorted))):
+                    top_pred = preds_sorted[i_ind]
+                    top_score = float(top_pred["probability"])
+                    top_name = top_pred["substrate_name"]
+                    top_code = to_3_letter(top_name)
+                    feat.qualifiers[f"specificity_prediction_PARAS_{i_ind + 1}"] = [top_code]
+                    feat.qualifiers[f"specificity_score_PARAS_{i_ind + 1}"] = [str(round(top_score, 4))]
 
             feat.qualifiers = dict(sorted(feat.qualifiers.items()))
 

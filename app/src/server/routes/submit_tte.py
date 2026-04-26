@@ -5,17 +5,15 @@ Routes for submitting TTE jobs.
 """
 
 import os
+import re
 import subprocess
 import tempfile
 import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Any
-import re
 
-from Bio import AlignIO
-from Bio import SeqIO
+from Bio import AlignIO, SeqIO
 from flask import Blueprint, request
 from werkzeug.utils import secure_filename
 
@@ -23,14 +21,13 @@ from .app import app
 from .common import ResponseData, Status
 from .constants import TEMP_DIR
 
-# Blueprint for TTE
 blueprint_submit_tte = Blueprint("submit_tte", __name__)
 
 
-# TODO: Add a checkbutton to enable paras prediction on the genebank files uploaded
 ####################################################################################################
-# Background worker
+# Helpers
 ####################################################################################################
+
 def clustalo_pairwise_identity(fasta1: str, fasta2: str) -> float:
     def pid(a: str, b: str) -> float:
         matches = valid = 0
@@ -63,7 +60,6 @@ def clustalo_pairwise_identity(fasta1: str, fasta2: str) -> float:
 def get_similarity(in_seq: str, ref_seq: str):
     if not in_seq or not ref_seq:
         return None
-
     try:
         with tempfile.TemporaryDirectory() as tmpd:
             tmpd = Path(tmpd)
@@ -74,17 +70,8 @@ def get_similarity(in_seq: str, ref_seq: str):
             ref_out.write_text(f">Reference_TTE\n{ref_seq}\n")
 
             similarity = clustalo_pairwise_identity(str(in_out), str(ref_out))
-            # if your clustalo_pairwise_identity returns a list, extract the single float:
-            if isinstance(similarity, list) and similarity:
-                # Expecting one pair only
-                # Pull the 'identity' field if present
-                if isinstance(similarity[0], dict) and "identity" in similarity[0]:
-                    return similarity[0]["identity"]
-                else:
-                    return float(similarity[0])
             return similarity
-    except Exception as e:
-        # print(f" Error processing similarity: {e}")
+    except Exception:
         return None
 
 
@@ -110,48 +97,45 @@ def extract_tte_from_cds(cds_feat, feats_in_cds):
     if not translation:
         return ""
     strand = cds_feat.location.strand
-    cs, ce = fpos(cds_feat)
-    prot_len = len(translation)
 
-    pfams = [f for f in feats_in_cds if f.type == "PFAM_domain" or f.type == "aSDomain"]
-    # TE domains inside CDS
+    pfams = [f for f in feats_in_cds if f.type in ("PFAM_domain", "aSDomain")]
     te_feats = [f for f in pfams if qget(f, "aSDomain") == "Thioesterase" and f.type == "PFAM_domain"]
     if not te_feats:
-        return ""  # no TE => skip
+        return ""
 
     te_feats.sort(key=lambda f: fpos(f)[0], reverse=(strand == -1))
     te = te_feats[0]
-    te_start_nt, _ = fpos(te)
-    te_start_nt = qget(te, "protein_start")
+    te_start_nt = int(qget(te, "protein_start") or 0)
 
-    # PP-binding/PCP/PMP inside CDS, upstream of TE
     upstream_caps = {"PP-binding", "PCP", "PMP"}
     temp_caps = [f for f in feats_in_cds if qget(f, "aSDomain") in upstream_caps]
     if not temp_caps:
         return ""
+    # Pick the cap domain immediately upstream of the TE in protein order.
+    # temp_caps must sort in the OPPOSITE direction to te_feats:
+    #   te_feats picks the FIRST TE in protein order (fwd: lowest genomic pos first).
+    #   temp_caps wants the LAST cap before the TE (fwd: highest genomic pos first).
     temp_caps.sort(key=lambda f: fpos(f)[0], reverse=(strand != -1))
 
     anchor = temp_caps[0]
+    ps = int(qget(anchor, "protein_start") or 0)
 
-    # find start AA index: prefer protein_start; fallback to nt mapping
-    ps = qget(anchor, "protein_start")
     if te_start_nt > ps:
-        return translation[int(ps):]
-    else:
-        return ""
+        return translation[ps:]
+    return ""
 
 
 def get_tte_records(gbk_path):
+    """Extract TTE rows from all protocore regions in a GenBank file."""
     rows = []
-
     for rec in SeqIO.parse(gbk_path, "genbank"):
         name = rec.name
         proto_regions = [f for f in rec.features if is_protocore(f)]
         for r_idx, region in enumerate(proto_regions, start=1):
-            rs, re = fpos(region)
+            rs, re_ = fpos(region)
             region_id = f"proto_core_{r_idx}"
 
-            mono_feats = [f for f in rec.features if overlaps(rs, re, *fpos(f)) and "monomer_pairings" in f.qualifiers]
+            mono_feats = [f for f in rec.features if overlaps(rs, re_, *fpos(f)) and "monomer_pairings" in f.qualifiers]
             mono_feats.sort(key=lambda f: fpos(f)[0])
             monomers = []
             for mf in mono_feats:
@@ -159,40 +143,87 @@ def get_tte_records(gbk_path):
                     monomers.append(str(v))
             monomers_str = " | ".join(monomers)
 
-            cds_list = [f for f in rec.features if f.type == "CDS" and overlaps(rs, re, *fpos(f))]
-            feats_in_region = [f for f in rec.features if overlaps(rs, re, *fpos(f))]
+            cds_list = [f for f in rec.features if f.type == "CDS" and overlaps(rs, re_, *fpos(f))]
+            feats_in_region = [f for f in rec.features if overlaps(rs, re_, *fpos(f))]
 
             for cds in cds_list:
                 cs, ce = fpos(cds)
                 feats_in_cds = [f for f in feats_in_region if cs <= fpos(f)[0] and fpos(f)[1] <= ce]
-
                 has_te = any(f.type == "PFAM_domain" and qget(f, "aSDomain") == "Thioesterase" for f in feats_in_cds)
                 if not has_te:
                     continue
-
                 tte_seq = extract_tte_from_cds(cds, feats_in_cds)
                 if tte_seq:
                     rows.append({
                         "file": gbk_path.name,
                         "file_locus": name,
                         "region_id": region_id,
+                        "region_idx": r_idx,
                         "monomer_pairs": monomers_str,
                         "CDS_locus_tag": qget(cds, "locus_tag") or qget(cds, "locus_tags"),
                         "tte_seq": tte_seq,
-                        "tte_len": len(tte_seq)
+                        "tte_len": len(tte_seq),
                     })
-
     return rows
 
 
-def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) -> None:
+def extract_protocore_gbk(gbk_path: Path, out_dir: Path, clean_stem: str) -> list:
+    """
+    Extract every protocluster region from gbk_path and write each one as
+    its own GenBank file inside out_dir.
+
+    Uses BioPython's built-in record slicing (``rec[start:end]``) which
+    correctly re-zeros all feature coordinates (including compound/join
+    locations), preserves strand, qualifiers and sub-features.
+
+    File naming: ``<clean_stem>_proto_core_<N>.gbk``
+
+    Returns a list of (region_idx, filename) tuples for every file written.
+    """
+    written = []
+
+    for rec in SeqIO.parse(str(gbk_path), "genbank"):
+        proto_regions = [f for f in rec.features if is_protocore(f)]
+
+        for r_idx, region in enumerate(proto_regions, start=1):
+            rs, re_ = fpos(region)
+
+            # BioPython record slicing handles coordinate re-zeroing,
+            # compound locations, strand, and qualifiers automatically.
+            sub_rec = rec[rs:re_]
+
+            # Override id/name/description for clarity
+            sub_rec.id = f"{rec.id}_proto_core_{r_idx}"
+            sub_rec.name = f"{rec.name[:10]}_pc{r_idx}"
+            sub_rec.description = f"Protocluster {r_idx} from {rec.description}"
+            # Ensure molecule_type annotation is set (required by GenBank writer)
+            sub_rec.annotations.setdefault(
+                "molecule_type", rec.annotations.get("molecule_type", "DNA")
+            )
+
+            out_fname = f"{clean_stem}_proto_core_{r_idx}.gbk"
+            out_path = out_dir / out_fname
+            SeqIO.write([sub_rec], str(out_path), "genbank")
+            written.append((r_idx, out_fname))
+
+    return written
+
+
+####################################################################################################
+# Background worker
+####################################################################################################
+
+def run_tte(job_id: str, reference_file_path: str, input_file_paths: list) -> None:
     try:
         results = []
+        gb_file_paths = {}  # clean_name → full path (for download endpoint)
 
         total_input_files = len(input_file_paths)
+
+        # ── Phase 1: extract reference TTEs ──────────────────────────────
         app.config["JOB_RESULTS"][job_id]["progress"] = {
             "phase": "extracting_reference",
-            "message": f"Extracting TTE from reference file...",
+            "message": "Extracting TTE from reference file...",
             "current": 0,
             "total": total_input_files,
         }
@@ -201,19 +232,22 @@ def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) 
         for row in ref_records:
             row["similarity"] = "reference"
             row["role"] = "reference"
-
         results.extend(ref_records)
 
-        for file_idx,input_path in enumerate(input_file_paths):
-            clean_fname = re.sub(r'^[a-f0-9\-]+_[AB]\d*_', '', input_path)
+        # ── Phase 2: per input file — extract TTEs, compute similarity,
+        #             and save a protocore-only GenBank ───────────────────
+        for file_idx, input_path in enumerate(input_file_paths):
+            # Clean filename: strip UUID prefix  e.g. uuid_IN_0_myfile.gb → myfile.gb
+            clean_fname = re.sub(r'^[a-f0-9\-]+_(?:IN_\d+|REF)_', '', Path(input_path).name)
 
             app.config["JOB_RESULTS"][job_id]["progress"] = {
                 "phase": "comparing",
-                "message": f"Comparing {clean_fname}...",
-                "current": clean_fname,
+                "message": f"Extracting TTE sequences from {clean_fname}...",
+                "current": file_idx,
                 "total": total_input_files,
                 "current_file": clean_fname,
             }
+
             input_records = get_tte_records(Path(input_path))
 
             app.config["JOB_RESULTS"][job_id]["progress"] = {
@@ -225,14 +259,11 @@ def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) 
                 "tte_count": len(input_records),
             }
 
-
             for row in input_records:
                 row["role"] = "input"
                 max_sim = None
-
                 for ref in ref_records:
                     sim = get_similarity(row.get("tte_seq", ""), ref.get("tte_seq", ""))
-                    print(max_sim, sim)
                     if sim is None:
                         continue
                     if max_sim is None or sim > max_sim:
@@ -241,69 +272,74 @@ def run_tte(job_id: str, reference_file_path: str, input_file_paths: list[str]) 
 
             results.extend(input_records)
 
+            # ── Save one GenBank per protocore region for this input file ──
+            stem = Path(input_path).stem
+            clean_stem = re.sub(r'^[a-f0-9\-]+_(?:IN_\d+|REF)_', '', stem)
+
+            written = extract_protocore_gbk(
+                Path(input_path), Path(TEMP_DIR), clean_stem
+            )
+            for r_idx, out_fname in written:
+                region_id = f"proto_core_{r_idx}"
+                # Key: "<clean_stem>::<region_id>"  e.g. "myfile::proto_core_2"
+                lookup_key = f"{clean_stem}::{region_id}"
+                gb_file_paths[lookup_key] = str(Path(TEMP_DIR) / out_fname)
+            if written:
+                app.logger.info(
+                    "Wrote %d individual protocore file(s) for %s",
+                    len(written), clean_stem,
+                )
+
         app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Success).lower()
         app.config["JOB_RESULTS"][job_id]["message"] = "TTE extraction & similarity completed"
         app.config["JOB_RESULTS"][job_id]["results"] = results
+        app.config["JOB_RESULTS"][job_id]["gb_file_paths"] = gb_file_paths
+        # Store list of protocore lookup keys so frontend can render per-region buttons
+        # Each key is "<clean_stem>::<region_id>" → maps to its filename
+        app.config["JOB_RESULTS"][job_id]["protocore_files"] = {
+            key: Path(path).name for key, path in gb_file_paths.items()
+        }
 
     except Exception as e:
+        app.logger.error("run_tte error for job %s: %s", job_id, e)
         app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Failure).lower()
         app.config["JOB_RESULTS"][job_id]["message"] = str(e)
         app.config["JOB_RESULTS"][job_id]["results"] = []
 
-    try:
-        os.remove(reference_file_path)
-    except Exception:
-        pass
-
-    for path in input_file_paths:
+    # Clean up temp input files (protocore files are kept for download)
+    for path in [reference_file_path] + input_file_paths:
         try:
             os.remove(path)
         except Exception:
             pass
 
 
-# API route
+####################################################################################################
+# Route
 ####################################################################################################
 
 @blueprint_submit_tte.route("/api/submit_tte", methods=["POST"])
-def submit_tte() -> dict[str, Any]:
-    """
-    Submit one reference GenBank file and one or more input GenBank files for TTE processing.
-    """
+def submit_tte() -> dict:
+    """Submit one reference + one or more input GenBank files for TTE processing."""
 
     if "reference_file" not in request.files:
-        return ResponseData(
-            Status.Failure,
-            message="reference_file is required."
-        ).to_dict()
+        return ResponseData(Status.Failure, message="reference_file is required.").to_dict()
 
     reference_file = request.files["reference_file"]
     input_files = request.files.getlist("input_files[]")
 
-    if reference_file.filename == "":
-        return ResponseData(
-            Status.Failure,
-            message="Reference file is empty."
-        ).to_dict()
+    if not reference_file.filename:
+        return ResponseData(Status.Failure, message="Reference file is empty.").to_dict()
 
     if not reference_file.filename.lower().endswith((".gb", ".gbk")):
-        return ResponseData(
-            Status.Failure,
-            message="Reference file must be a .gb or .gbk file."
-        ).to_dict()
+        return ResponseData(Status.Failure, message="Reference file must be a .gb or .gbk file.").to_dict()
 
     if not input_files:
-        return ResponseData(
-            Status.Failure,
-            message="At least one input file is required."
-        ).to_dict()
+        return ResponseData(Status.Failure, message="At least one input file is required.").to_dict()
 
     for f in input_files:
-        if f.filename == "":
-            return ResponseData(
-                Status.Failure,
-                message="One of the input files has an empty filename."
-            ).to_dict()
+        if not f.filename:
+            return ResponseData(Status.Failure, message="One of the input files has an empty filename.").to_dict()
         if not f.filename.lower().endswith((".gb", ".gbk")):
             return ResponseData(
                 Status.Failure,
@@ -319,6 +355,8 @@ def submit_tte() -> dict[str, Any]:
         "job_type": "tte",
         "results": [],
         "timestamp": timestamp,
+        "gb_file_paths": {},
+        "protocore_files": [],
     }
 
     os.makedirs(TEMP_DIR, exist_ok=True)
@@ -344,7 +382,4 @@ def submit_tte() -> dict[str, Any]:
         daemon=True,
     ).start()
 
-    return ResponseData(
-        Status.Success,
-        payload={"jobId": job_id}
-    ).to_dict()
+    return ResponseData(Status.Success, payload={"jobId": job_id}).to_dict()

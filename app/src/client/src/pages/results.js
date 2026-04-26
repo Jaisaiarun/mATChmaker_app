@@ -40,6 +40,8 @@ const Results = () => {
     const [annotatedFile, setAnnotatedFile] = useState(null);
     const [progress, setProgress] = useState(null);
     const [nowTs, setNowTs] = useState(Date.now());
+    const [protocoreFiles, setProtocoreFiles] = useState({});
+    const [expandedSeqs, setExpandedSeqs] = useState(new Set());
 
     // live clock for elapsed loading time
     useEffect(() => {
@@ -64,6 +66,8 @@ const Results = () => {
                     const rawResults = payload.results || [];
                     const resolvedJobType = payload.job_type || 'paras';
                     setJobType(resolvedJobType);
+
+                    if (payload.protocore_files) setProtocoreFiles(payload.protocore_files || {});
 
                     if (resolvedJobType === 'paras') {
                         rawResults.forEach(result => {
@@ -130,9 +134,7 @@ const Results = () => {
         }
     }, [results, jobType, monomerFilterInitialized]);
 
-    // ─────────────────────────────────────────────────────────────────────
-    // ALL hooks before early returns
-    // ─────────────────────────────────────────────────────────────────────
+    // ── ALL hooks before early returns ────────────────────────────────────
 
     const uniqueMonomers = useMemo(() => {
         if (!results || jobType !== 'tte') return [];
@@ -194,6 +196,14 @@ const Results = () => {
             );
     }, [results, jobType, sortDirection]);
 
+    // protocoreFiles is a dict: "<clean_stem>::<region_id>" → filename
+    // e.g. { "myfile::proto_core_1": "myfile_proto_core_1.gbk", ... }
+    // No transformation needed — used directly as a lookup.
+    const protocoreHasAny = useMemo(
+        () => Object.keys(protocoreFiles).length > 0,
+        [protocoreFiles]
+    );
+
     const loadingElapsedSeconds = useMemo(() => {
         if (!progress?.started_at) return 0;
         return Math.max(0, Math.floor((nowTs - progress.started_at * 1000) / 1000));
@@ -254,7 +264,6 @@ const Results = () => {
             return next;
         });
     };
-
     const handleSelectAllMonomers = () => setSelectedMonomers(new Set(uniqueMonomers));
     const handleClearAllMonomers = () => setSelectedMonomers(new Set());
 
@@ -267,7 +276,7 @@ const Results = () => {
 
         return (
             <Box display='flex' flexDirection='column' justifyContent='center'
-                 alignItems='center' minHeight='90vh' gap={2} padding={4}>
+                alignItems='center' minHeight='90vh' gap={2} padding={4}>
 
                 <Loading frame1='Logo_trans_1.png' frame2='Logo_trans_2.png'/>
 
@@ -288,51 +297,34 @@ const Results = () => {
                 {jobType === 'paras_annotation' && (
                     <Box sx={{width: '100%', maxWidth: 400}}>
                         <Box sx={{
-                            width: '100%',
-                            height: 10,
-                            borderRadius: 5,
-                            bgcolor: 'divider',
-                            overflow: 'hidden',
-                            position: 'relative',
+                            width: '100%', height: 10,
+                            borderRadius: 5, bgcolor: 'divider',
+                            overflow: 'hidden', position: 'relative',
                         }}>
                             {progress?.phase === 'loading_model' ? (
-                                <Box
-                                    sx={{
-                                        width: '35%',
-                                        height: '100%',
-                                        borderRadius: 5,
-                                        bgcolor: 'secondary.main',
-                                        position: 'absolute',
-                                        animation: 'loading-slide 1.4s ease-in-out infinite',
-                                        '@keyframes loading-slide': {
-                                            '0%': {left: '-35%'},
-                                            '100%': {left: '100%'},
-                                        },
-                                    }}
-                                />
+                                <Box sx={{
+                                    width: '35%', height: '100%',
+                                    borderRadius: 5, bgcolor: 'secondary.main',
+                                    position: 'absolute',
+                                    animation: 'loading-slide 1.4s ease-in-out infinite',
+                                    '@keyframes loading-slide': {
+                                        '0%': {left: '-35%'},
+                                        '100%': {left: '100%'},
+                                    },
+                                }}/>
                             ) : (
-                                <Box
-                                    sx={{
-                                        width: `${pct ?? 0}%`,
-                                        height: '100%',
-                                        borderRadius: 5,
-                                        bgcolor: 'secondary.main',
-                                        transition: 'width 0.4s ease',
-                                    }}
-                                />
+                                <Box sx={{
+                                    width: `${pct ?? 0}%`, height: '100%',
+                                    borderRadius: 5, bgcolor: 'secondary.main',
+                                    transition: 'width 0.4s ease',
+                                }}/>
                             )}
                         </Box>
-
-                        <Typography
-                            variant='caption'
-                            color='text.secondary'
-                            sx={{mt: 0.5, display: 'block', textAlign: 'center'}}
-                        >
+                        <Typography variant='caption' color='text.secondary'
+                            sx={{mt: 0.5, display: 'block', textAlign: 'center'}}>
                             {progress?.phase === 'loading_model'
                                 ? `Preparing model... ${loadingElapsedSeconds}s`
-                                : pct !== null
-                                    ? `${pct}%`
-                                    : 'Starting...'}
+                                : pct !== null ? `${pct}%` : 'Starting...'}
                         </Typography>
                     </Box>
                 )}
@@ -375,17 +367,13 @@ const Results = () => {
 
                     {jobType === 'tte' && (
                         <Tooltip title="Download table as CSV">
-                            <IconButton onClick={downloadTteCsv}>
-                                <FaFileCsv/>
-                            </IconButton>
+                            <IconButton onClick={downloadTteCsv}><FaFileCsv/></IconButton>
                         </Tooltip>
                     )}
 
                     {jobType === 'paras_annotation' && (
                         <Tooltip title="Download predictions as CSV">
-                            <IconButton onClick={downloadAnnotationCsv}>
-                                <FaFileCsv/>
-                            </IconButton>
+                            <IconButton onClick={downloadAnnotationCsv}><FaFileCsv/></IconButton>
                         </Tooltip>
                     )}
                 </Box>
@@ -403,41 +391,37 @@ const Results = () => {
 
                 <Box sx={{mt: 4}}>
                     <Typography variant='body1' gutterBottom>
-                        You can download the results as a JSON file using the download button above next to the header.
+                        You can download the results as a JSON file using the download button above.
                     </Typography>
                     <Typography variant='body1' gutterBottom>
-                        You can use the job ID to retrieve the results at a later time. All jobs are automatically
-                        deleted after 7 days.
+                        You can use the job ID to retrieve the results at a later time. All jobs are
+                        automatically deleted after 7 days.
                     </Typography>
                 </Box>
             </Box>
 
             <Box sx={{
-                overflowY: 'auto',
-                overflowX: 'auto',
+                overflowY: 'auto', overflowX: 'auto',
                 backgroundColor: 'white.main',
-                display: 'flex',
-                gap: '20px',
-                paddingLeft: '30px',
-                paddingRight: '30px',
-                paddingBottom: '20px',
+                display: 'flex', gap: '20px',
+                paddingLeft: '30px', paddingRight: '30px', paddingBottom: '20px',
                 '&::-webkit-scrollbar': {display: 'block'},
                 '&::-webkit-scrollbar-thumb': {backgroundColor: '#ceccca', borderRadius: '10px'},
             }}>
 
+                {/* ── PARAS card tiles ── */}
                 {jobType === 'paras' && results.map((result, index) => (
                     <ResultTile key={index} result={result}/>
                 ))}
 
+                {/* ── PARAS annotation table ── */}
                 {jobType === 'paras_annotation' && (
                     <Box sx={{width: '100%'}}>
-
                         {annotatedFile && (
                             <Box sx={{mb: 3, display: 'flex', alignItems: 'center', gap: 2}}>
                                 <Typography variant="body1">Annotated GenBank file ready:</Typography>
                                 <Button
-                                    variant="outlined"
-                                    size="small"
+                                    variant="outlined" size="small"
                                     startIcon={<FaDownload/>}
                                     onClick={() => window.open(
                                         `/api/download_file/${jobId}/${encodeURIComponent(annotatedFile)}`,
@@ -461,11 +445,9 @@ const Results = () => {
                                             <TableSortLabel
                                                 active={true}
                                                 direction={sortDirection}
-                                                onClick={() =>
-                                                    setSortDirection(prev =>
-                                                        prev === 'desc' ? 'asc' : 'desc'
-                                                    )
-                                                }
+                                                onClick={() => setSortDirection(prev =>
+                                                    prev === 'desc' ? 'asc' : 'desc'
+                                                )}
                                             >
                                                 <strong>Score</strong>
                                             </TableSortLabel>
@@ -476,19 +458,15 @@ const Results = () => {
                                     {groupedAnnotationResults.map((group) => (
                                         <React.Fragment key={group.domain_id}>
                                             <TableRow sx={{backgroundColor: 'background.default'}}>
-                                                <TableCell
-                                                    colSpan={5}
-                                                    sx={{fontWeight: 'bold', color: 'text.secondary'}}
-                                                >
+                                                <TableCell colSpan={5}
+                                                    sx={{fontWeight: 'bold', color: 'text.secondary'}}>
                                                     {group.domain_id}
                                                 </TableCell>
                                             </TableRow>
-
                                             {group.rows.map((row, idx) => (
                                                 <TableRow
                                                     key={`${group.domain_id}-${row.substrate_3letter}-${idx}`}
-                                                    hover
-                                                >
+                                                    hover>
                                                     <TableCell sx={{
                                                         fontFamily: 'monospace',
                                                         fontSize: '0.78rem',
@@ -499,21 +477,13 @@ const Results = () => {
                                                     <TableCell>{row.existing_specificity || '–'}</TableCell>
                                                     <TableCell>{row.substrate}</TableCell>
                                                     <TableCell>
-                                                        <Chip
-                                                            label={row.substrate_3letter}
-                                                            size="small"
-                                                            variant="outlined"
-                                                        />
+                                                        <Chip label={row.substrate_3letter} size="small" variant="outlined"/>
                                                     </TableCell>
-                                                    <TableCell
-                                                        align="right"
-                                                        sx={{
-                                                            fontWeight: 'bold',
-                                                            color: row.score >= 0.8 ? 'green'
-                                                                : row.score >= 0.5 ? 'orange'
-                                                                    : 'red',
-                                                        }}
-                                                    >
+                                                    <TableCell align="right" sx={{
+                                                        fontWeight: 'bold',
+                                                        color: row.score >= 0.8 ? 'green'
+                                                            : row.score >= 0.5 ? 'orange' : 'red',
+                                                    }}>
                                                         {(row.score * 100).toFixed(1)} %
                                                     </TableCell>
                                                 </TableRow>
@@ -526,13 +496,15 @@ const Results = () => {
                     </Box>
                 )}
 
+                {/* ── TTE table ── */}
                 {jobType === 'tte' && (
                     <Box sx={{width: '100%'}}>
+
+                        {/* Monomer filter */}
                         {uniqueMonomers.length > 0 && (
                             <Box sx={{mb: 2}}>
                                 <Button
-                                    variant="outlined"
-                                    size="small"
+                                    variant="outlined" size="small"
                                     startIcon={<FaFilter/>}
                                     onClick={() => setShowMonomerFilter(prev => !prev)}
                                     sx={{mb: 1}}
@@ -562,8 +534,7 @@ const Results = () => {
                                                     }
                                                     label={
                                                         <Chip
-                                                            label={monomer}
-                                                            size="small"
+                                                            label={monomer} size="small"
                                                             variant={selectedMonomers.has(monomer) ? 'filled' : 'outlined'}
                                                             color={selectedMonomers.has(monomer) ? 'secondary' : 'default'}
                                                         />
@@ -582,7 +553,7 @@ const Results = () => {
 
                         <TableContainer
                             component={Paper}
-                            sx={{minWidth: 1100, maxHeight: 600, borderRadius: 2, boxShadow: 2}}
+                            sx={{minWidth: 1200, maxHeight: 600, borderRadius: 2, boxShadow: 2}}
                         >
                             <Table stickyHeader size="small">
                                 <TableHead>
@@ -605,14 +576,26 @@ const Results = () => {
                                             </TableSortLabel>
                                         </TableCell>
                                         <TableCell><strong>TTE Sequence</strong></TableCell>
+                                        {/* Only render this column header if there are protocore files */}
+                                        {protocoreHasAny && (
+                                            <TableCell align="center">
+                                                <strong>Protocore .gbk</strong>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 </TableHead>
+
                                 <TableBody>
                                     {filteredAndSortedResults.map((r, index) => {
+                                        // Strip UUID prefix to get clean filename
                                         const cleanFileName = r.file.replace(
-                                            /^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/,
-                                            ''
+                                            /^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/, ''
                                         );
+                                        // Strip extension to get stem, build lookup key
+                                        const fileStem = cleanFileName.replace(/\.(gb|gbk)$/i, '');
+                                        const lookupKey = `${fileStem}::${r.region_id}`;
+                                        const protocoreFname = protocoreFiles[lookupKey] || null;
+
                                         return (
                                             <TableRow key={index} hover>
                                                 <TableCell>{cleanFileName}</TableCell>
@@ -623,34 +606,71 @@ const Results = () => {
                                                 </TableCell>
                                                 <TableCell>{r.CDS_locus_tag || '–'}</TableCell>
                                                 <TableCell align="center">{r.tte_len}</TableCell>
-                                                <TableCell
-                                                    align="center"
-                                                    sx={{
-                                                        fontWeight: 'bold',
-                                                        color: r.similarity === 'reference'
-                                                            ? 'text.secondary'
-                                                            : typeof r.similarity === 'number'
-                                                                ? r.similarity >= 80 ? 'green'
-                                                                    : r.similarity >= 50 ? 'orange'
-                                                                        : 'red'
-                                                                : 'text.disabled',
-                                                    }}
-                                                >
+                                                <TableCell align="center" sx={{
+                                                    fontWeight: 'bold',
+                                                    color: r.similarity === 'reference'
+                                                        ? 'text.secondary'
+                                                        : typeof r.similarity === 'number'
+                                                            ? r.similarity >= 80 ? 'green'
+                                                                : r.similarity >= 50 ? 'orange'
+                                                                    : 'red'
+                                                            : 'text.disabled',
+                                                }}>
                                                     {r.similarity === 'reference'
                                                         ? 'reference'
                                                         : typeof r.similarity === 'number'
                                                             ? `${r.similarity.toFixed(2)} %`
                                                             : '–'}
                                                 </TableCell>
-                                                <TableCell sx={{
-                                                    maxWidth: 350,
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '0.75rem',
-                                                    whiteSpace: 'pre-wrap',
-                                                    wordBreak: 'break-all',
-                                                }}>
-                                                    {r.tte_seq}
+                                                <TableCell
+                                                    onClick={() => setExpandedSeqs(prev => {
+                                                        const next = new Set(prev);
+                                                        next.has(index) ? next.delete(index) : next.add(index);
+                                                        return next;
+                                                    })}
+                                                    sx={{
+                                                        maxWidth: expandedSeqs.has(index) ? 450 : 180,
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '0.75rem',
+                                                        whiteSpace: expandedSeqs.has(index) ? 'pre-wrap' : 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: expandedSeqs.has(index) ? 'unset' : 'ellipsis',
+                                                        cursor: 'pointer',
+                                                        userSelect: 'text',
+                                                        color: 'text.secondary',
+                                                        wordBreak: expandedSeqs.has(index) ? 'break-all' : 'normal',
+                                                    }}
+                                                    title={expandedSeqs.has(index) ? 'Click to collapse' : 'Click to expand full sequence'}
+                                                >
+                                                    {expandedSeqs.has(index)
+                                                        ? r.tte_seq
+                                                        : `${(r.tte_seq || '').slice(0, 30)}${(r.tte_seq || '').length > 30 ? '…' : ''}`
+                                                    }
                                                 </TableCell>
+
+                                                {/* Per-row protocore download — only rendered when column exists */}
+                                                {protocoreHasAny && (
+                                                    <TableCell align="center">
+                                                        {protocoreFname ? (
+                                                            <Tooltip title={`Download ${protocoreFname}`}>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => window.open(
+                                                                        `/api/download_file/${jobId}/${encodeURIComponent(protocoreFname)}`,
+                                                                        '_blank'
+                                                                    )}
+                                                                >
+                                                                    <FaDownload size={12}/>
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            // Reference rows have no protocore file
+                                                            <Typography variant="caption" color="text.disabled">
+                                                                –
+                                                            </Typography>
+                                                        )}
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         );
                                     })}
