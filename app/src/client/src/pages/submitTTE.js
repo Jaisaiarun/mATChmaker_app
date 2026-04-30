@@ -1,17 +1,20 @@
 import React, {useState} from 'react';
 import {toast} from 'react-toastify';
-import {Box, Button, CircularProgress, Divider, IconButton, Input, Typography} from '@mui/material';
+import {
+    Box, Button, CircularProgress, Divider,
+    FormControl, FormControlLabel, FormLabel,
+    IconButton, Input, MenuItem,
+    Radio, RadioGroup, Select, Typography
+} from '@mui/material';
 import {FaTrash} from 'react-icons/fa';
 
 const SubmitTTE = () => {
-    // loading state
     const [isLoading, setIsLoading] = useState(false);
-
-    // two required input files
     const [referenceFile, setFileA] = useState(null);
     const [inputFiles, setInputFiles] = useState([]);
+    const [runParas, setRunParas] = useState('tte_only');           // 'tte_only' | 'tte_paras'
+    const [parasModel, setParasModel] = useState('parasAllSubstrates');
 
-    // refresh page
     const handleRefresh = () => {
         localStorage.removeItem('results');
         window.location.reload();
@@ -23,25 +26,17 @@ const SubmitTTE = () => {
         return name.endsWith('.gbk') || name.endsWith('.gb');
     };
 
-
-    // file handlers
     const handleFileAUpload = (e) => {
         const file = e.target.files[0];
-        if (!file) {
-            setFileA(null);
-            return;
-        }
-
+        if (!file) { setFileA(null); return; }
         if (!isGenBankFile(file)) {
             toast.error('Only .gbk or .gb files are allowed for TTE input.');
             e.target.value = null;
             setFileA(null);
             return;
         }
-
         setFileA(file);
     };
-
 
     const handleInputFilesUpload = (e) => {
         const incoming = Array.from(e.target.files);
@@ -58,15 +53,13 @@ const SubmitTTE = () => {
             return true;
         });
         if (accepted.length) setInputFiles(prev => [...prev, ...accepted]);
-        e.target.value = null; // allow re-adding same filename after removal
+        e.target.value = null;
     };
 
     const handleRemoveInputFile = (name) => {
         setInputFiles(prev => prev.filter(f => f.name !== name));
-    }
+    };
 
-
-    // submit handler
     const handleSubmit = async () => {
         if (!referenceFile || inputFiles.length === 0) {
             toast.error('Please upload both input and reference Files.');
@@ -79,6 +72,8 @@ const SubmitTTE = () => {
             const formData = new FormData();
             formData.append('reference_file', referenceFile);
             inputFiles.forEach(f => formData.append('input_files[]', f));
+            formData.append('run_paras_annotation', runParas === 'tte_paras' ? 'true' : 'false');
+            formData.append('paras_model_key', parasModel);
 
             const response = await fetch('/api/submit_tte', {
                 method: 'POST',
@@ -96,17 +91,12 @@ const SubmitTTE = () => {
             }
 
             if (!response.ok) {
-                if (json?.message) {
-                    toast.error(json.message);
-                } else {
-                    toast.error(`Request failed: ${response.status} ${response.statusText}`);
-                }
+                toast.error(json?.message || `Request failed: ${response.status} ${response.statusText}`);
                 return;
             }
 
             if (json?.status === 'success' && json?.payload?.jobId) {
-                const jobId = json.payload.jobId;
-                window.location.href = `/results/${jobId}`;
+                window.location.href = `/results/${json.payload.jobId}`;
             } else if (json?.status === 'warning') {
                 toast.warn(json.message);
             } else {
@@ -119,28 +109,19 @@ const SubmitTTE = () => {
         } finally {
             setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            padding={4}
-            maxWidth={700}
-            margin="auto"
-        >
+        <Box display="flex" flexDirection="column" padding={4} maxWidth={700} margin="auto">
             <Typography variant="h4" gutterBottom>
                 Submit TTE Data
             </Typography>
 
             <Divider sx={{mb: 3}}/>
 
-            {/* First file */}
+            {/* Reference file */}
             <Box sx={{mb: 3}}>
-                <Typography gutterBottom>
-                    Upload Reference Genbank file
-                </Typography>
+                <Typography gutterBottom>Upload Reference Genbank file</Typography>
                 <Input
                     type="file"
                     inputProps={{accept: '.gb,.gbk'}}
@@ -148,11 +129,9 @@ const SubmitTTE = () => {
                 />
             </Box>
 
-            {/* Second file */}
+            {/* Input files */}
             <Box sx={{mb: 4}}>
-                <Typography gutterBottom>
-                    Upload Input Genbank files
-                </Typography>
+                <Typography gutterBottom>Upload Input Genbank files</Typography>
                 <Input
                     type="file"
                     inputProps={{accept: '.gb,.gbk', multiple: true}}
@@ -168,16 +147,54 @@ const SubmitTTE = () => {
                 ))}
             </Box>
 
+            <Divider sx={{mb: 3}}/>
+
+            {/* PARAS annotation option */}
+            <Box sx={{mb: 3}}>
+                <FormControl>
+                    <FormLabel sx={{fontWeight: 'bold', mb: 1}}>PARAS Prediction</FormLabel>
+                    <RadioGroup
+                        value={runParas}
+                        onChange={(e) => setRunParas(e.target.value)}
+                    >
+                        <FormControlLabel
+                            value="tte_only"
+                            control={<Radio/>}
+                            label="TTE comparison only"
+                        />
+                        <FormControlLabel
+                            value="tte_paras"
+                            control={<Radio/>}
+                            label="TTE comparison + PARAS substrate prediction"
+                        />
+                    </RadioGroup>
+                </FormControl>
+
+                {/* Model selector — only visible when PARAS is enabled */}
+                {runParas === 'tte_paras' && (
+                    <Box sx={{mt: 1, ml: 3.5}}>
+                        <Typography variant="body2" gutterBottom color="text.secondary">
+                            PARAS model
+                        </Typography>
+                        <Select
+                            size="small"
+                            value={parasModel}
+                            onChange={(e) => setParasModel(e.target.value)}
+                        >
+                            <MenuItem value="parasAllSubstrates">PARAS — all substrates</MenuItem>
+                            <MenuItem value="parasCommonSubstrates">PARAS — common substrates</MenuItem>
+                        </Select>
+                    </Box>
+                )}
+            </Box>
+
+            <Divider sx={{mb: 3}}/>
+
             {/* Action buttons */}
             <Box display="flex" gap={2}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleRefresh}
-                >
+                <Button variant="contained" color="primary" onClick={handleRefresh}>
                     Refresh
                 </Button>
-
                 <Button
                     variant="contained"
                     color="secondary"

@@ -33,17 +33,22 @@ const Results = () => {
     const [results, setResults] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [jobType, setJobType] = useState('paras');
+    const [hasParas, setHasParas] = useState(false);
     const [sortDirection, setSortDirection] = useState('desc');
     const [selectedMonomers, setSelectedMonomers] = useState(new Set());
-    const [monomerFilterInitialized, setMonomerFilterInitialized] = useState(false);
+    const [monomerFilterInitialized,
+        setMonomerFilterInitialized] = useState(false);
     const [showMonomerFilter, setShowMonomerFilter] = useState(false);
+    const [selectedParasSubstrates, setSelectedParasSubstrates] = useState(new Set());
+    const [parasFilterInitialized, setParasFilterInitialized] = useState(false);
+    const [showParasFilter, setShowParasFilter] = useState(false);
     const [annotatedFile, setAnnotatedFile] = useState(null);
     const [progress, setProgress] = useState(null);
     const [nowTs, setNowTs] = useState(Date.now());
     const [protocoreFiles, setProtocoreFiles] = useState({});
     const [expandedSeqs, setExpandedSeqs] = useState(new Set());
 
-    // live clock for elapsed loading time
+    // live clock for paras_annotation elapsed display
     useEffect(() => {
         if (!isLoading || jobType !== 'paras_annotation') return;
         const timer = setInterval(() => setNowTs(Date.now()), 1000);
@@ -65,9 +70,13 @@ const Results = () => {
                     const payload = data.payload || {};
                     const rawResults = payload.results || [];
                     const resolvedJobType = payload.job_type || 'paras';
+
                     setJobType(resolvedJobType);
+                    setHasParas(payload.has_paras || false);
 
                     if (payload.protocore_files) setProtocoreFiles(payload.protocore_files || {});
+                    if (payload.annotated_file) setAnnotatedFile(payload.annotated_file);
+                    if (payload.progress) setProgress(payload.progress);
 
                     if (resolvedJobType === 'paras') {
                         rawResults.forEach(result => {
@@ -78,15 +87,13 @@ const Results = () => {
                         });
                     }
 
-                    if (payload.annotated_file) setAnnotatedFile(payload.annotated_file);
-                    if (payload.progress) setProgress(payload.progress);
-
                     setResults(rawResults);
                     setIsLoading(false);
                     clearInterval(intervalId);
 
                 } else if (data.status === 'pending') {
                     if (data.payload?.job_type) setJobType(data.payload.job_type);
+                    if (data.payload?.has_paras !== undefined) setHasParas(data.payload.has_paras);
                     if (data.payload?.progress) setProgress(data.payload.progress);
 
                 } else if (data.status === 'failure') {
@@ -98,9 +105,9 @@ const Results = () => {
                 toast.error(
                     <>
                         {error.message}<br/><br/>
-                        If you feel this is an error, or if you need assistance, please contact the developers in GitHub
-                        issues by selecting 'Report an issue' in the app bar at the top left of this page and posting
-                        your issue or question.
+                        If you feel this is an error, or if you need assistance, please contact the
+                        developers in GitHub issues by selecting 'Report an issue' in the app bar at
+                        the top left of this page and posting your issue or question.
                     </>,
                     {autoClose: false}
                 );
@@ -120,21 +127,36 @@ const Results = () => {
     // ── Monomer filter init ───────────────────────────────────────────────
     useEffect(() => {
         if (results && jobType === 'tte' && !monomerFilterInitialized) {
-            const allMonomers = new Set();
+            const all = new Set();
             results.forEach(r => {
                 if (r.monomer_pairs) {
                     r.monomer_pairs.split(' | ').forEach(m => {
-                        const trimmed = m.trim();
-                        if (trimmed) allMonomers.add(trimmed);
+                        const t = m.trim();
+                        if (t) all.add(t);
                     });
                 }
             });
-            setSelectedMonomers(allMonomers);
+            setSelectedMonomers(all);
             setMonomerFilterInitialized(true);
         }
     }, [results, jobType, monomerFilterInitialized]);
 
-    // ── ALL hooks before early returns ────────────────────────────────────
+    // ── PARAS Filter filter init ───────────────────────────────────────────────
+    useEffect(() => {
+        if (results && jobType === 'tte' && hasParas && !parasFilterInitialized) {
+            const all = new Set();
+            results.forEach(r => {
+                (r.paras_substrates || []).forEach(p => {
+                    const label = p.substrate_3letter || p.substrate;
+                    if (label) all.add(label);
+                });
+            });
+            setSelectedParasSubstrates(all);
+            setParasFilterInitialized(true);
+        }
+    }, [results, jobType, hasParas, parasFilterInitialized]);
+
+    // ── Derived values (all useMemo before early returns) ─────────────────
 
     const uniqueMonomers = useMemo(() => {
         if (!results || jobType !== 'tte') return [];
@@ -142,36 +164,81 @@ const Results = () => {
         results.forEach(r => {
             if (r.monomer_pairs) {
                 r.monomer_pairs.split(' | ').forEach(m => {
-                    const trimmed = m.trim();
-                    if (trimmed) monomers.add(trimmed);
+                    const t = m.trim();
+                    if (t) monomers.add(t);
                 });
             }
         });
         return Array.from(monomers).sort();
     }, [results, jobType]);
 
+    const uniqueParasSubstrates = useMemo(() => {
+        if (!results || jobType !== 'tte' || !hasParas) return [];
+        const subs = new Set();
+        results.forEach(r => {
+            (r.paras_substrates || []).forEach(p => {
+                const label = p.substrate_3letter || p.substrate;
+                if (label) subs.add(label);
+            });
+        });
+        return Array.from(subs).sort();
+    }, [results, jobType, hasParas]);
+
     const filteredAndSortedResults = useMemo(() => {
         if (!results || jobType !== 'tte') return results || [];
 
         let filtered = results.filter(r => {
-            if (!r.monomer_pairs || r.monomer_pairs.trim() === '') return true;
-            const rowMonomers = r.monomer_pairs.split(' | ').map(m => m.trim());
-            return rowMonomers.some(m => selectedMonomers.has(m));
+            // Monomer filter
+            const monomerPass = (() => {
+                if (!r.monomer_pairs || r.monomer_pairs.trim() === '') return true;
+
+                const rowMonomers = r.monomer_pairs
+                    .split(' | ')
+                    .map(m => m.trim());
+
+                return rowMonomers.some(m => selectedMonomers.has(m));
+            })();
+
+            // PARAS substrate filter
+            const parasPass = (() => {
+                if (!hasParas) return true;
+
+                const rowParasSubs = (r.paras_substrates || [])
+                    .map(p => p.substrate_3letter || p.substrate)
+                    .filter(Boolean);
+
+                // Keep rows with no PARAS predictions visible
+                if (rowParasSubs.length === 0) return true;
+
+                return rowParasSubs.some(sub => selectedParasSubstrates.has(sub));
+            })();
+
+            return monomerPass && parasPass;
         });
 
         filtered = [...filtered].sort((a, b) => {
-            const aIsRef = a.similarity === 'reference';
-            const bIsRef = b.similarity === 'reference';
-            if (aIsRef && !bIsRef) return -1;
-            if (!aIsRef && bIsRef) return 1;
-            if (aIsRef && bIsRef) return 0;
+            const aRef = a.similarity === 'reference';
+            const bRef = b.similarity === 'reference';
+
+            if (aRef && !bRef) return -1;
+            if (!aRef && bRef) return 1;
+            if (aRef && bRef) return 0;
+
             const aVal = typeof a.similarity === 'number' ? a.similarity : -1;
             const bVal = typeof b.similarity === 'number' ? b.similarity : -1;
+
             return sortDirection === 'desc' ? bVal - aVal : aVal - bVal;
         });
 
         return filtered;
-    }, [results, jobType, selectedMonomers, sortDirection]);
+    }, [
+        results,
+        jobType,
+        selectedMonomers,
+        selectedParasSubstrates,
+        hasParas,
+        sortDirection
+    ]);
 
     const groupedAnnotationResults = useMemo(() => {
         if (!results || jobType !== 'paras_annotation') return [];
@@ -190,15 +257,10 @@ const Results = () => {
                 return {domain_id, rows: sorted, topScore: sorted[0]?.score ?? -1};
             })
             .sort((a, b) =>
-                sortDirection === 'desc'
-                    ? b.topScore - a.topScore
-                    : a.topScore - b.topScore
+                sortDirection === 'desc' ? b.topScore - a.topScore : a.topScore - b.topScore
             );
     }, [results, jobType, sortDirection]);
 
-    // protocoreFiles is a dict: "<clean_stem>::<region_id>" → filename
-    // e.g. { "myfile::proto_core_1": "myfile_proto_core_1.gbk", ... }
-    // No transformation needed — used directly as a lookup.
     const protocoreHasAny = useMemo(
         () => Object.keys(protocoreFiles).length > 0,
         [protocoreFiles]
@@ -212,16 +274,28 @@ const Results = () => {
     // ── Download helpers ──────────────────────────────────────────────────
 
     const downloadTteCsv = () => {
-        const headers = ['File', 'File Locus', 'Region ID', 'Monomer Pairs',
-            'CDS Locus Tag', 'TTE Length', 'Similarity', 'TTE Sequence'];
+        const headers = [
+            'File', 'File Locus', 'Region ID', 'Monomer Pairs',
+            'CDS Locus Tag', 'TTE Length', 'Similarity', 'TTE Sequence',
+            ...(hasParas ? ['PARAS Predictions (substrate: score%)'] : []),
+        ];
         const rows = filteredAndSortedResults.map(r => {
             const cleanFileName = r.file.replace(/^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/, '');
             const similarity = r.similarity === 'reference'
                 ? 'reference'
                 : typeof r.similarity === 'number' ? r.similarity.toFixed(2) : '';
-            return [cleanFileName, r.file_locus || '', r.region_id || '',
+            const base = [
+                cleanFileName, r.file_locus || '', r.region_id || '',
                 r.monomer_pairs || '', r.CDS_locus_tag || '', r.tte_len || '',
-                similarity, r.tte_seq || ''];
+                similarity, r.tte_seq || '',
+            ];
+            if (hasParas) {
+                const subs = (r.paras_substrates || [])
+                    .map(p => `${p.substrate_3letter || p.substrate}: ${(p.score * 100).toFixed(1)}%`)
+                    .join('; ');
+                base.push(subs);
+            }
+            return base;
         });
         const csv = [headers, ...rows]
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
@@ -235,15 +309,10 @@ const Results = () => {
     };
 
     const downloadAnnotationCsv = () => {
-        const headers = ['Domain ID', 'Locus Tag', 'Existing Substrate',
-            'Substrate', 'Substrate Code', 'Score (%)'];
+        const headers = ['Domain ID', 'Locus Tag', 'Existing Substrate', 'Substrate', 'Substrate Code', 'Score (%)'];
         const rows = (results || []).map(r => [
-            r.domain_id || '',
-            r.locus_tag || '',
-            r.existing_specificity || '',
-            r.substrate || '',
-            r.substrate_3letter || '',
-            (r.score * 100).toFixed(1),
+            r.domain_id || '', r.locus_tag || '', r.existing_specificity || '',
+            r.substrate || '', r.substrate_3letter || '', (r.score * 100).toFixed(1),
         ]);
         const csv = [headers, ...rows]
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
@@ -256,56 +325,87 @@ const Results = () => {
         URL.revokeObjectURL(url);
     };
 
-    const handleMonomerToggle = (monomer) => {
-        setSelectedMonomers(prev => {
-            const next = new Set(prev);
-            if (next.has(monomer)) next.delete(monomer);
-            else next.add(monomer);
-            return next;
-        });
-    };
+    const handleMonomerToggle = (m) => setSelectedMonomers(prev => {
+        const next = new Set(prev);
+        next.has(m) ? next.delete(m) : next.add(m);
+        return next;
+    });
     const handleSelectAllMonomers = () => setSelectedMonomers(new Set(uniqueMonomers));
     const handleClearAllMonomers = () => setSelectedMonomers(new Set());
 
-    // ── Early returns ─────────────────────────────────────────────────────
+    // ── Loading screen ────────────────────────────────────────────────────
 
     if (isLoading) {
         const pct = progress?.total > 0
             ? Math.round((progress.current / progress.total) * 100)
             : null;
 
+        const loadingMessage = (() => {
+            if (!progress) return 'Starting...';
+            const phase = progress.phase;
+            if (jobType === 'paras_annotation') {
+                if (phase === 'loading_model') return 'Loading PARAS model...';
+                if (phase === 'running') return 'Running PARAS predictions...';
+                if (phase === 'saving') return 'Saving annotated GenBank file...';
+                return 'Starting...';
+            }
+            if (phase === 'extracting_reference') return 'Extracting TTE from reference file...';
+            if (phase === 'comparing') return `Extracting TTE from ${progress.current_file || 'input file'}...`;
+            if (phase === 'similarity') return `Computing similarity for ${progress.current_file || 'input file'}...`;
+            if (phase === 'paras') {
+                if (progress.current === 0) return 'Loading PARAS model...';
+                return `Running PARAS — ${progress.message || ''}`;
+            }
+            return 'Processing...';
+        })();
+
+        const loadingDetail = (() => {
+            if (!progress) return null;
+            const phase = progress.phase;
+            if (jobType === 'paras_annotation' && phase === 'running') {
+                return `Domain ${progress.current} of ${progress.total}: ${progress.current_domain}`;
+            }
+            if (phase === 'similarity' && progress.tte_count != null) {
+                return `${progress.tte_count} TTE sequence(s) found`;
+            }
+            if (phase === 'paras' && progress.current > 0) {
+                return `Domain ${progress.current} of ${progress.total}`;
+            }
+            return null;
+        })();
+
+        const showProgressBar = jobType === 'paras_annotation' || progress?.phase === 'paras';
+        const isIndeterminate = (
+            progress?.phase === 'loading_model' ||
+            (progress?.phase === 'paras' && progress.current === 0)
+        );
+
         return (
             <Box display='flex' flexDirection='column' justifyContent='center'
-                alignItems='center' minHeight='90vh' gap={2} padding={4}>
+                 alignItems='center' minHeight='90vh' gap={2} padding={4}>
 
                 <Loading frame1='Logo_trans_1.png' frame2='Logo_trans_2.png'/>
 
                 <Typography variant='h6' color='text.secondary'>
-                    {jobType !== 'paras_annotation' && 'Making predictions...'}
-                    {jobType === 'paras_annotation' && !progress && 'Starting...'}
-                    {jobType === 'paras_annotation' && progress?.phase === 'loading_model' && 'Loading PARAS model...'}
-                    {jobType === 'paras_annotation' && progress?.phase === 'running' && 'Running PARAS predictions...'}
-                    {jobType === 'paras_annotation' && progress?.phase === 'saving' && 'Saving annotated GenBank file...'}
+                    {loadingMessage}
                 </Typography>
 
-                {jobType === 'paras_annotation' && progress?.phase === 'running' && (
+                {loadingDetail && (
                     <Typography variant='body2' color='text.secondary'>
-                        Domain {progress.current} of {progress.total}: {progress.current_domain}
+                        {loadingDetail}
                     </Typography>
                 )}
 
-                {jobType === 'paras_annotation' && (
+                {showProgressBar && (
                     <Box sx={{width: '100%', maxWidth: 400}}>
                         <Box sx={{
-                            width: '100%', height: 10,
-                            borderRadius: 5, bgcolor: 'divider',
-                            overflow: 'hidden', position: 'relative',
+                            width: '100%', height: 10, borderRadius: 5,
+                            bgcolor: 'divider', overflow: 'hidden', position: 'relative',
                         }}>
-                            {progress?.phase === 'loading_model' ? (
+                            {isIndeterminate ? (
                                 <Box sx={{
-                                    width: '35%', height: '100%',
-                                    borderRadius: 5, bgcolor: 'secondary.main',
-                                    position: 'absolute',
+                                    width: '35%', height: '100%', borderRadius: 5,
+                                    bgcolor: 'secondary.main', position: 'absolute',
                                     animation: 'loading-slide 1.4s ease-in-out infinite',
                                     '@keyframes loading-slide': {
                                         '0%': {left: '-35%'},
@@ -321,9 +421,11 @@ const Results = () => {
                             )}
                         </Box>
                         <Typography variant='caption' color='text.secondary'
-                            sx={{mt: 0.5, display: 'block', textAlign: 'center'}}>
-                            {progress?.phase === 'loading_model'
-                                ? `Preparing model... ${loadingElapsedSeconds}s`
+                                    sx={{mt: 0.5, display: 'block', textAlign: 'center'}}>
+                            {isIndeterminate
+                                ? (jobType === 'paras_annotation'
+                                    ? `Preparing model... ${loadingElapsedSeconds}s`
+                                    : 'Preparing PARAS model...')
                                 : pct !== null ? `${pct}%` : 'Starting...'}
                         </Typography>
                     </Box>
@@ -459,7 +561,7 @@ const Results = () => {
                                         <React.Fragment key={group.domain_id}>
                                             <TableRow sx={{backgroundColor: 'background.default'}}>
                                                 <TableCell colSpan={5}
-                                                    sx={{fontWeight: 'bold', color: 'text.secondary'}}>
+                                                           sx={{fontWeight: 'bold', color: 'text.secondary'}}>
                                                     {group.domain_id}
                                                 </TableCell>
                                             </TableRow>
@@ -468,8 +570,7 @@ const Results = () => {
                                                     key={`${group.domain_id}-${row.substrate_3letter}-${idx}`}
                                                     hover>
                                                     <TableCell sx={{
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '0.78rem',
+                                                        fontFamily: 'monospace', fontSize: '0.78rem',
                                                         color: 'text.secondary',
                                                     }}>
                                                         {row.domain_id}
@@ -477,7 +578,8 @@ const Results = () => {
                                                     <TableCell>{row.existing_specificity || '–'}</TableCell>
                                                     <TableCell>{row.substrate}</TableCell>
                                                     <TableCell>
-                                                        <Chip label={row.substrate_3letter} size="small" variant="outlined"/>
+                                                        <Chip label={row.substrate_3letter} size="small"
+                                                              variant="outlined"/>
                                                     </TableCell>
                                                     <TableCell align="right" sx={{
                                                         fontWeight: 'bold',
@@ -496,7 +598,7 @@ const Results = () => {
                     </Box>
                 )}
 
-                {/* ── TTE table ── */}
+                {/* ── TTE table (with optional PARAS prediction column) ── */}
                 {jobType === 'tte' && (
                     <Box sx={{width: '100%'}}>
 
@@ -546,14 +648,82 @@ const Results = () => {
                                 </Collapse>
                             </Box>
                         )}
+                        {/* PARAS filter */}
+                        {hasParas && uniqueParasSubstrates.length > 0 && (
+                            <Box sx={{mb: 2}}>
+                                <Button
+                                    variant="outlined" size="small"
+                                    startIcon={<FaFilter/>}
+                                    onClick={() => setShowParasFilter(prev => !prev)}
+                                    sx={{mb: 1}}
+                                    color="secondary"
+                                >
+                                    Filter PARAS Predictions
+                                    ({selectedParasSubstrates.size}/{uniqueParasSubstrates.length})
+                                </Button>
+                                <Collapse in={showParasFilter}>
+                                    <Paper sx={{p: 2, mb: 2}}>
+                                        <Box sx={{display: 'flex', gap: 1, mb: 1}}>
+                                            <Button size="small" variant="text"
+                                                    onClick={() => setSelectedParasSubstrates(new Set(uniqueParasSubstrates))}>
+                                                Select All
+                                            </Button>
+                                            <Button size="small" variant="text"
+                                                    onClick={() => setSelectedParasSubstrates(new Set())}>
+                                                Clear All
+                                            </Button>
+                                        </Box>
+                                        <FormGroup row sx={{gap: 0.5}}>
+                                            {uniqueParasSubstrates.map(sub => (
+                                                <FormControlLabel
+                                                    key={sub}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={selectedParasSubstrates.has(sub)}
+                                                            onChange={() => setSelectedParasSubstrates(prev => {
+                                                                const next = new Set(prev);
+                                                                next.has(sub) ? next.delete(sub) : next.add(sub);
+                                                                return next;
+                                                            })}
+                                                            size="small"
+                                                        />
+                                                    }
+                                                    label={
+                                                        <Chip
+                                                            label={sub} size="small"
+                                                            variant={selectedParasSubstrates.has(sub) ? 'filled' : 'outlined'}
+                                                            color={selectedParasSubstrates.has(sub) ? 'secondary' : 'default'}
+                                                        />
+                                                    }
+                                                />
+                                            ))}
+                                        </FormGroup>
+                                    </Paper>
+                                </Collapse>
+                            </Box>
+                        )}
 
                         <Typography variant="body2" sx={{mb: 1}} color="text.secondary">
                             Showing {filteredAndSortedResults.length} of {results.length} results
+                            {hasParas && (
+                                <Chip
+                                    label="+ PARAS predictions"
+                                    size="small"
+                                    color="secondary"
+                                    variant="outlined"
+                                    sx={{ml: 1}}
+                                />
+                            )}
                         </Typography>
 
                         <TableContainer
                             component={Paper}
-                            sx={{minWidth: 1200, maxHeight: 600, borderRadius: 2, boxShadow: 2}}
+                            sx={{
+                                minWidth: hasParas ? 1500 : 1200,
+                                maxHeight: 600,
+                                borderRadius: 2,
+                                boxShadow: 2,
+                            }}
                         >
                             <Table stickyHeader size="small">
                                 <TableHead>
@@ -576,7 +746,16 @@ const Results = () => {
                                             </TableSortLabel>
                                         </TableCell>
                                         <TableCell><strong>TTE Sequence</strong></TableCell>
-                                        {/* Only render this column header if there are protocore files */}
+                                        {/* PARAS prediction column — only when PARAS was run */}
+                                        {hasParas && (
+                                            <TableCell align="center" sx={{minWidth: 220}}>
+                                                <strong>PARAS Predictions</strong>
+                                                <Typography variant="caption" display="block" color="text.secondary">
+                                                    all A-domains in region
+                                                </Typography>
+                                            </TableCell>
+                                        )}
+                                        {/* Protocore download column */}
                                         {protocoreHasAny && (
                                             <TableCell align="center">
                                                 <strong>Protocore .gbk</strong>
@@ -587,14 +766,14 @@ const Results = () => {
 
                                 <TableBody>
                                     {filteredAndSortedResults.map((r, index) => {
-                                        // Strip UUID prefix to get clean filename
                                         const cleanFileName = r.file.replace(
                                             /^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/, ''
                                         );
-                                        // Strip extension to get stem, build lookup key
                                         const fileStem = cleanFileName.replace(/\.(gb|gbk)$/i, '');
                                         const lookupKey = `${fileStem}::${r.region_id}`;
                                         const protocoreFname = protocoreFiles[lookupKey] || null;
+                                        const isReference = r.similarity === 'reference';
+                                        const parasSubs = r.paras_substrates || [];
 
                                         return (
                                             <TableRow key={index} hover>
@@ -608,7 +787,7 @@ const Results = () => {
                                                 <TableCell align="center">{r.tte_len}</TableCell>
                                                 <TableCell align="center" sx={{
                                                     fontWeight: 'bold',
-                                                    color: r.similarity === 'reference'
+                                                    color: isReference
                                                         ? 'text.secondary'
                                                         : typeof r.similarity === 'number'
                                                             ? r.similarity >= 80 ? 'green'
@@ -616,7 +795,7 @@ const Results = () => {
                                                                     : 'red'
                                                             : 'text.disabled',
                                                 }}>
-                                                    {r.similarity === 'reference'
+                                                    {isReference
                                                         ? 'reference'
                                                         : typeof r.similarity === 'number'
                                                             ? `${r.similarity.toFixed(2)} %`
@@ -640,7 +819,9 @@ const Results = () => {
                                                         color: 'text.secondary',
                                                         wordBreak: expandedSeqs.has(index) ? 'break-all' : 'normal',
                                                     }}
-                                                    title={expandedSeqs.has(index) ? 'Click to collapse' : 'Click to expand full sequence'}
+                                                    title={expandedSeqs.has(index)
+                                                        ? 'Click to collapse'
+                                                        : 'Click to expand full sequence'}
                                                 >
                                                     {expandedSeqs.has(index)
                                                         ? r.tte_seq
@@ -648,7 +829,54 @@ const Results = () => {
                                                     }
                                                 </TableCell>
 
-                                                {/* Per-row protocore download — only rendered when column exists */}
+                                                {/* ── PARAS predictions — all A-domains in this region ── */}
+                                                {hasParas && (
+                                                    <TableCell align="center" sx={{verticalAlign: 'top', pt: 1}}>
+                                                        {isReference ? (
+                                                            <Typography variant="caption"
+                                                                        color="text.disabled">–</Typography>
+                                                        ) : parasSubs.length > 0 ? (
+                                                            <Box sx={{
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                alignItems: 'flex-start',
+                                                                gap: 0.5,
+                                                            }}>
+                                                                {parasSubs.map((p, i) => (
+                                                                    <Box key={i} sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 0.5
+                                                                    }}>
+                                                                        <Chip
+                                                                            label={p.substrate_3letter || p.substrate}
+                                                                            size="small"
+                                                                            color={
+                                                                                p.score >= 0.8 ? 'success'
+                                                                                    : p.score >= 0.5 ? 'warning'
+                                                                                        : 'default'
+                                                                            }
+                                                                            variant="outlined"
+                                                                        />
+                                                                        <Typography variant="caption" sx={{
+                                                                            fontWeight: 'bold',
+                                                                            minWidth: 40,
+                                                                            color: p.score >= 0.8 ? 'green'
+                                                                                : p.score >= 0.5 ? 'orange' : 'red',
+                                                                        }}>
+                                                                            {(p.score * 100).toFixed(1)}%
+                                                                        </Typography>
+                                                                    </Box>
+                                                                ))}
+                                                            </Box>
+                                                        ) : (
+                                                            <Typography variant="caption"
+                                                                        color="text.disabled">–</Typography>
+                                                        )}
+                                                    </TableCell>
+                                                )}
+
+                                                {/* ── Per-row protocore download ── */}
                                                 {protocoreHasAny && (
                                                     <TableCell align="center">
                                                         {protocoreFname ? (
@@ -664,10 +892,8 @@ const Results = () => {
                                                                 </IconButton>
                                                             </Tooltip>
                                                         ) : (
-                                                            // Reference rows have no protocore file
-                                                            <Typography variant="caption" color="text.disabled">
-                                                                –
-                                                            </Typography>
+                                                            <Typography variant="caption"
+                                                                        color="text.disabled">–</Typography>
                                                         )}
                                                     </TableCell>
                                                 )}
