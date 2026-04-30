@@ -7,6 +7,8 @@ from routes.retrieval import blueprint_retrieve
 from routes.submit import blueprint_submit_raw, blueprint_submit_quick
 from routes.submit_tte import blueprint_submit_tte
 from routes.submit_paras_annotation import blueprint_paras_annotation
+from routes.submit_xu_xut import blueprint_xu_xut_annotation
+from routes.submit_antismash import blueprint_antismash
 from routes.data_annotation import blueprint_annotate_data
 from routes.file_download import blueprint_file_download
 from routes.annotation_editor import (
@@ -35,6 +37,8 @@ app.register_blueprint(blueprint_check_protein_name)
 app.register_blueprint(blueprint_sql)
 app.register_blueprint(blueprint_submit_tte)
 app.register_blueprint(blueprint_paras_annotation)
+app.register_blueprint(blueprint_xu_xut_annotation)
+app.register_blueprint(blueprint_antismash)
 app.register_blueprint(blueprint_file_download)
 
 

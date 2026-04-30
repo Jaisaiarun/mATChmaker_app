@@ -25,6 +25,8 @@ import QueryDatabase from './pages/query_database'
 
 import SubmitTTE from "./pages/submitTTE";
 import SubmitParasAnnotation from './pages/submitParasAnnotation';
+import SubmitXuXut from './pages/submitXuXut';
+import SubmitAntiSMASH from './pages/submitAntiSMASH';
 
 
 /**
@@ -183,6 +185,14 @@ const CustomToolbar = () => {
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         Annotate GenBank (PARAS)
                     </MenuItem>
+                    <MenuItem onClick={() => handleMenuItemClick('/annotate_xu_xut')}>
+                        <UploadIcon sx={{marginRight: '10px'}}/>
+                        XUT / XU Annotation
+                    </MenuItem>
+                    <MenuItem onClick={() => handleMenuItemClick('/annotate_antismash')}>
+                        <UploadIcon sx={{marginRight: '10px'}}/>
+                        antiSMASH Annotation
+                    </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/retrieve')}>
                         <RetrieveIcon sx={{marginRight: '10px'}}/>
                         Retrieve
@@ -239,13 +249,14 @@ function AppRoutes() {
                     element={<SubmitTTE/>}
                 />
                 <Route
-                    path="/submit_paras_annotation"
-                    element={<SubmitParasAnnotation/>}
-                />
-                <Route
                     path='/annotate_gbk'
-                    element={<SubmitParasAnnotation/>}
-                />
+                    element={<SubmitParasAnnotation/>}/>
+                <Route
+                    path='/annotate_xu_xut'
+                    element={<SubmitXuXut/>}/>
+                <Route
+                    path='/annotate_antismash'
+                    element={<SubmitAntiSMASH/>}/>
                 <Route
                     path='/retrieve'
                     element={<Retrieve/>}

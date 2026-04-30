@@ -59,14 +59,19 @@ The app will be available at `https://localhost:4010/`.
 
 
 ### Commands
-```# Build the development server image
+Build the development server image
+```
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -p paras up --build
 ````
-
-```# Run the development server container
+Stop the development server container
+```
 docker compose -p paras down
 ```
-
+Run this once after deploying to download the antiSMASH databases (takes a while)
+```
+docker exec paras-server conda run -n web \
+  download-antismash-databases --database-dir /app/antismash_databases
+```
 ## Learning topics:
 
 - uvicorn - better for development

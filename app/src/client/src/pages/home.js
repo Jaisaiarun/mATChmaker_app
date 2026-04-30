@@ -54,17 +54,17 @@ const Home = () => {
                     gap: 2
                 }}
             >
-                <Button
-                    variant='contained'
-                    color='primary'
-                    size='large'
-                    href='/submit'
-                    sx={{marginBottom: 3}}
-                >
-                    <Typography sx={{color: 'white.main'}}>
-                        Start predicting
-                    </Typography>
-                </Button>
+                {/*<Button*/}
+                {/*    variant='contained'*/}
+                {/*    color='primary'*/}
+                {/*    size='large'*/}
+                {/*    href='/submit'*/}
+                {/*    sx={{marginBottom: 3}}*/}
+                {/*>*/}
+                {/*    <Typography sx={{color: 'white.main'}}>*/}
+                {/*        Start predicting*/}
+                {/*    </Typography>*/}
+                {/*</Button>*/}
                 <Button
                     variant="contained"
                     color="primary"
@@ -74,7 +74,7 @@ const Home = () => {
                 >
                     Start TTE Comparison
                 </Button>
-                 <Button
+                <Button
                     variant="contained"
                     color="primary"
                     size='large'
@@ -83,40 +83,57 @@ const Home = () => {
                 >
                     Annotate GenBank with PARAS
                 </Button>
-
                 <Button
-                    variant='contained'
-                    color='primary'
+                    variant="contained"
+                    color="primary"
                     size='large'
-                    href='/retrieve'
+                    href="/annotate_xu_xut"
                     sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{color: 'white.main'}}>
-                        Retrieve results
-                    </Typography>
+                    XUT / XU Annotation
                 </Button>
                 <Button
-                    variant='contained'
-                    color='primary'
+                    variant="contained"
+                    color="primary"
                     size='large'
-                    href='/data_annotation'
+                    href="/annotate_antismash"
                     sx={{marginBottom: 3}}
                 >
-                    <Typography sx={{color: 'white.main'}}>
-                        Annotate domain
-                    </Typography>
+                    AntiSMASH Annotation
                 </Button>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    size='large'
-                    href='/query_database'
-                    sx={{marginBottom: 3}}
-                >
-                    <Typography sx={{color: 'white.main'}}>
-                        Query database
-                    </Typography>
-                </Button>
+                {/*<Button*/}
+                {/*    variant='contained'*/}
+                {/*    color='primary'*/}
+                {/*    size='large'*/}
+                {/*    href='/retrieve'*/}
+                {/*    sx={{marginBottom: 3}}*/}
+                {/*>*/}
+                {/*    <Typography sx={{color: 'white.main'}}>*/}
+                {/*        Retrieve results*/}
+                {/*    </Typography>*/}
+                {/*</Button>*/}
+                {/*<Button*/}
+                {/*    variant='contained'*/}
+                {/*    color='primary'*/}
+                {/*    size='large'*/}
+                {/*    href='/data_annotation'*/}
+                {/*    sx={{marginBottom: 3}}*/}
+                {/*>*/}
+                {/*    <Typography sx={{color: 'white.main'}}>*/}
+                {/*        Annotate domain*/}
+                {/*    </Typography>*/}
+                {/*</Button>*/}
+                {/*<Button*/}
+                {/*    variant='contained'*/}
+                {/*    color='primary'*/}
+                {/*    size='large'*/}
+                {/*    href='/query_database'*/}
+                {/*    sx={{marginBottom: 3}}*/}
+                {/*>*/}
+                {/*    <Typography sx={{color: 'white.main'}}>*/}
+                {/*        Query database*/}
+                {/*    </Typography>*/}
+                {/*</Button>*/}
             </Box>
 
             <Typography variant='body1' align='center' color='textSecondary' gutterBottom>

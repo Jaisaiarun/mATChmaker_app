@@ -4,7 +4,7 @@ version: "3.3"
 services:
   paras-server:
     build:
-      context: . 
+      context: .
       dockerfile: Dockerfile.server
     image: paras-server
     restart: always
@@ -13,8 +13,10 @@ services:
     container_name: paras-server
     volumes:
       - ./models:/app/models:ro
+      - antismash-db:/app/antismash_databases   # persist databases across rebuilds
     environment:
       - MODEL_DIR=/app/models
+      - ANTISMASH_DB_DIR=/app/antismash_databases
       - LOG_LEVEL=DEBUG
       # Also set in Dockerfile, can override here
       - OMP_NUM_THREADS=1
@@ -33,9 +35,9 @@ services:
       start_period: 5s
 
   paras-client:
-    build: 
-      context: . 
-      dockerfile: Dockerfile.client 
+    build:
+      context: .
+      dockerfile: Dockerfile.client
       args:
         - REACT_APP_TURNSTILE_SITE_KEY=${REACT_APP_TURNSTILE_SITE_KEY}
     image: paras-client
@@ -50,3 +52,6 @@ services:
 networks:
   paras-network:
     driver: bridge
+
+volumes:
+  antismash-db:    # named volume — survives docker-compose down, only re-downloads on first build
