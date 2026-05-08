@@ -1,23 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap');
 @import "react-toastify/dist/ReactToastify.css";
 
+:root {
+  --parchment: #F2E8D0;
+  --parchment-dark: #E0CFA4;
+  --parchment-deep: #C8AE78;
+  --ink: #1C1A14;
+  --ink-muted: #5C5341;
+  --gold: #B8893A;
+  --gold-light: #D4A85A;
+  --teal: #2A6B68;
+  --teal-light: #3D9490;
+  --teal-pale: #E8F4F3;
+  --red-brick: #8C2D4F;
+  --shadow-sm: 0 1px 3px rgba(28,26,20,0.08);
+  --shadow-md: 0 4px 12px rgba(28,26,20,0.10);
+  --shadow-lg: 0 8px 28px rgba(28,26,20,0.14);
+  --radius: 8px;
+  --radius-lg: 14px;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+}
+
 * {
-    font-family: "Arial", sans-serif;
-    color: black;
+  font-family: var(--font-body);
+  color: var(--ink);
+  box-sizing: border-box;
 }
 
 html, body {
-    margin: 0;
-    overflow-x: hidden;
+  margin: 0;
+  overflow-x: hidden;
+  background-color: var(--parchment);
+  min-height: 100vh;
 }
 
 .Toastify__toast {
-    border-radius: 5;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #d6d6d6;
-    padding: 10px;
-    font-family: var(--main-font);
-    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3);
-    background-color: white;
-    color: black;
+  border-radius: var(--radius);
+  border: 1px solid var(--parchment-dark);
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  box-shadow: var(--shadow-md);
+  background-color: #FEFCF5;
+  color: var(--ink);
 }
+.Toastify__toast--error { border-left: 3px solid var(--red-brick); }
+.Toastify__toast--success { border-left: 3px solid var(--teal); }
+.Toastify__toast--warning { border-left: 3px solid var(--gold); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--parchment-dark); }
+::-webkit-scrollbar-thumb { background: var(--parchment-deep); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+input[type="file"] {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageFadeIn 0.3s ease forwards; }

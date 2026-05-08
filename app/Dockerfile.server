@@ -18,16 +18,12 @@ WORKDIR /app
 COPY server-environment.yml /app/
 COPY server-requirements.txt /app/
 
+COPY --chown=root:root src/server/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Create Conda env with mamba (faster) and clean caches
 RUN mamba env create -n web -f server-environment.yml \
  && conda clean -afy
-
-# ── Download antiSMASH databases ─────────────────────────────────────────────
-# Databases are large (~4 GB) so we download them into a dedicated directory
-# that can be bind-mounted as a volume to avoid re-downloading on every rebuild.
-# The ANTISMASH_DB_DIR env var tells antiSMASH where to find them at runtime.
-ENV ANTISMASH_DB_DIR=/app/antismash_databases
-
 
 # Ensure `conda run -n web ...` works for ENTRYPOINT/CMD
 RUN echo "conda activate web" >> /etc/bash.bashrc

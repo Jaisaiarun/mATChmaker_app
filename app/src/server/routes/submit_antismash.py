@@ -115,7 +115,6 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
             "--output-dir",       str(output_dir),
             "--genefinding-tool", "none",       # keep existing gene annotations
             "--pfam2go",                         # PFAM domain annotation
-            "--output-format",    "genbank",
             "--cpus",             "4",
             "--logfile",          str(output_dir / "antismash.log"),
         ]
