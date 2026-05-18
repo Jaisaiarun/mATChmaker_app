@@ -29,7 +29,7 @@ const NotFound = () => {
                 </Typography>
                 <Box
                     component='img'
-                    src='/paras_error.png'
+                    src='/Logo_trans_1.png'
                     alt='PARAS Error'
                     sx={{ width: 300 }}
                 />

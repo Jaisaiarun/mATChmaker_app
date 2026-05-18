@@ -103,7 +103,7 @@ const SubmitTTE = () => {
             if (!response.ok) { toast.error(json?.message || `Request failed: ${response.status}`); return; }
 
             if (json?.status === 'success' && json?.payload?.jobId) {
-                window.location.href = `/results/${json.payload.jobId}`;
+                window.location.href = `/results/tte/${json.payload.jobId}`;
             } else if (json?.status === 'warning') {
                 toast.warn(json.message);
             } else {

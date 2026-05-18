@@ -40,7 +40,7 @@ const SubmitXuXut = () => {
             try { json = await resp.json(); } catch (_) {}
 
             if (resp.ok && json?.status === 'success' && json?.payload?.jobId) {
-                navigate(`/results/${json.payload.jobId}`);
+                navigate(`/results/xu_xut/${json.payload.jobId}`);
             } else {
                 toast.error(json?.message || `Request failed: ${resp.status}`);
             }

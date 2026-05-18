@@ -24,8 +24,10 @@ import AnnotationEditor from './pages/annotation_editor'
 import QueryDatabase from './pages/query_database'
 
 import SubmitTTE from "./pages/submitTTE";
+import ResultsTTE from './pages/resultsTTE';
 import SubmitParasAnnotation from './pages/submitParasAnnotation';
 import SubmitXuXut from './pages/submitXuXut';
+import ResultsXuXut from './pages/resultsxuxut';
 import SubmitAntiSMASH from './pages/submitAntiSMASH';
 
 
@@ -300,7 +302,7 @@ const CustomToolbar = () => {
                         Query database
                     </MenuItem>
                     <MenuItem
-                        onClick={() => handleExternalLinkClick('https://github.com/BTheDragonMaster/parasect/issues')}>
+                        onClick={() => handleExternalLinkClick('https://github.com/Jaisaiarun/mATChmaker_app/issues')}>
                         <GitHubIcon sx={{marginRight: '10px'}}/>
                         Report an issue
                     </MenuItem>
@@ -368,6 +370,14 @@ function AppRoutes() {
                 <Route
                     path='/retrieve'
                     element={<Retrieve/>}
+                />
+                <Route
+                    path='/results/xu_xut/:jobId'
+                    element={<ResultsXuXut/>}
+                />
+                <Route
+                    path='/results/tte/:jobId'
+                    element={<ResultsTTE/>}
                 />
                 <Route
                     path='/results/:jobId'

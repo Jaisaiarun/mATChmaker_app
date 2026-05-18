@@ -21,9 +21,6 @@ from routes.annotation_editor import (
 )
 from routes.sql import blueprint_sql
 
-
-from parasect.version import get_version
-
 app.register_blueprint(blueprint_retrieve)
 app.register_blueprint(blueprint_submit_raw)
 app.register_blueprint(blueprint_submit_quick)
@@ -51,8 +48,8 @@ def not_found(error) -> Response:
 def index() -> Response:
     return app.send_static_file("index.html")
 
-
+APP_VERSION = "1.5.0"
 # api endpoint for fetching version
 @app.route("/api/version")
 def version() -> Response:
-    return jsonify({"version": get_version()})
+    return jsonify({"version": APP_VERSION})

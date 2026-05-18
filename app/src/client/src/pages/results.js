@@ -267,7 +267,7 @@ const Results = () => {
     );
 
     const loadingElapsedSeconds = useMemo(() => {
-        if (!progress?.started_at) return 0;
+        if (progress?.started_at == null) return 0;
         return Math.max(0, Math.floor((nowTs - progress.started_at * 1000) / 1000));
     }, [progress, nowTs]);
 
@@ -349,12 +349,6 @@ const Results = () => {
                 if (phase === 'saving') return 'Saving annotated GenBank file...';
                 return 'Starting...';
             }
-            if (jobType === 'xu_xut_annotation') {
-                if (phase === 'parsing') return 'Parsing GenBank file...';
-                if (phase === 'annotating') return `Annotating ${progress.message || ''}...`;
-                if (phase === 'saving') return 'Writing annotated GenBank file...';
-                return 'Starting...';
-            }
             if (jobType === 'antismash') {
                 if (phase === 'running') return 'Running antiSMASH (this may take several minutes)...';
                 if (phase === 'merging') return 'Merging antiSMASH output files...';
@@ -385,7 +379,7 @@ const Results = () => {
             return null;
         })();
 
-        const showProgressBar = jobType === 'paras_annotation' || jobType === 'xu_xut_annotation' || progress?.phase === 'paras';
+        const showProgressBar = jobType === 'paras_annotation' || progress?.phase === 'paras';
         const isIndeterminate = (
             progress?.phase === 'loading_model' ||
             (progress?.phase === 'paras' && progress.current === 0) ||
@@ -516,7 +510,7 @@ const Results = () => {
 
             <Box sx={{
                 overflowY: 'auto', overflowX: 'auto',
-                backgroundColor: 'white.main',
+                backgroundColor: 'background.paper',
                 display: 'flex', gap: '20px',
                 paddingLeft: '30px', paddingRight: '30px', paddingBottom: '20px',
                 '&::-webkit-scrollbar': {display: 'block'},
@@ -918,97 +912,6 @@ const Results = () => {
                     </Box>
                 )}
 
-                {/* ── XUT / XU annotation results ── */}
-                {jobType === 'xu_xut_annotation' && (
-                    <Box sx={{width: '100%'}}>
-                        {annotatedFile && (
-                            <Box sx={{mb: 3, display: 'flex', alignItems: 'center', gap: 2}}>
-                                <Typography variant="body1">Annotated GenBank file ready:</Typography>
-                                <Button
-                                    variant="outlined" size="small" startIcon={<FaDownload/>}
-                                    onClick={() => window.open(
-                                        `/api/download_file/${jobId}/${encodeURIComponent(annotatedFile)}`,
-                                        '_blank'
-                                    )}
-                                >
-                                    {annotatedFile}
-                                </Button>
-                            </Box>
-                        )}
-
-                        {/* XUT table */}
-                        {['XUT', 'XU'].map(featureType => {
-                            const rows = (results || []).filter(r => r.type === featureType);
-                            if (rows.length === 0) return null;
-                            return (
-                                <Box key={featureType} sx={{mb: 5}}>
-                                    <Typography variant="h6" gutterBottom>
-                                        {featureType === 'XUT' ? 'XUT_mATChmaker' : 'XU_mATChmaker'} regions
-                                        <Chip label={`${rows.length} fragments`} size="small" sx={{ml: 1}}/>
-                                    </Typography>
-                                    <TableContainer component={Paper}
-                                                    sx={{borderRadius: 2, boxShadow: 2, maxHeight: 500}}>
-                                        <Table stickyHeader size="small">
-                                            <TableHead>
-                                                <TableRow>
-                                                    <TableCell><strong>#</strong></TableCell>
-                                                    <TableCell><strong>Record</strong></TableCell>
-                                                    <TableCell><strong>Label</strong></TableCell>
-                                                    <TableCell align="center"><strong>Start</strong></TableCell>
-                                                    <TableCell align="center"><strong>End</strong></TableCell>
-                                                    <TableCell align="center"><strong>Length (aa)</strong></TableCell>
-                                                    <TableCell><strong>Sequence</strong></TableCell>
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {rows.map((r, idx) => (
-                                                    <TableRow key={idx} hover>
-                                                        <TableCell>{r.module_position}</TableCell>
-                                                        <TableCell sx={{fontFamily: 'monospace', fontSize: '0.75rem'}}>
-                                                            {r.record}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Chip label={r.label} size="small" variant="outlined"
-                                                                  color="secondary"/>
-                                                        </TableCell>
-                                                        <TableCell align="center">{r.start}</TableCell>
-                                                        <TableCell align="center">{r.end}</TableCell>
-                                                        <TableCell align="center">{r.length}</TableCell>
-                                                        <TableCell
-                                                            onClick={() => setExpandedSeqs(prev => {
-                                                                const next = new Set(prev);
-                                                                const key = `${featureType}-${idx}`;
-                                                                next.has(key) ? next.delete(key) : next.add(key);
-                                                                return next;
-                                                            })}
-                                                            sx={{
-                                                                maxWidth: expandedSeqs.has(`${featureType}-${idx}`) ? 400 : 160,
-                                                                fontFamily: 'monospace',
-                                                                fontSize: '0.72rem',
-                                                                whiteSpace: expandedSeqs.has(`${featureType}-${idx}`) ? 'pre-wrap' : 'nowrap',
-                                                                overflow: 'hidden',
-                                                                textOverflow: expandedSeqs.has(`${featureType}-${idx}`) ? 'unset' : 'ellipsis',
-                                                                cursor: 'pointer',
-                                                                userSelect: 'text',
-                                                                color: 'text.secondary',
-                                                                wordBreak: expandedSeqs.has(`${featureType}-${idx}`) ? 'break-all' : 'normal',
-                                                            }}
-                                                            title="Click to expand/collapse"
-                                                        >
-                                                            {expandedSeqs.has(`${featureType}-${idx}`)
-                                                                ? r.sequence
-                                                                : `${(r.sequence || '').slice(0, 25)}${(r.sequence || '').length > 25 ? '…' : ''}`}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                </Box>
-                            );
-                        })}
-                    </Box>
-                )}
 
                 {/* ── antiSMASH annotation results ── */}
                 {jobType === 'antismash' && (

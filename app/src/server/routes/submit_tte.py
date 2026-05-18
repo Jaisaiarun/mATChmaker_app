@@ -357,7 +357,10 @@ def run_tte(
         gb_file_paths   = {}
         total_input_files = len(input_file_paths)
 
-        # ── Phase 1: extract reference TTEs ──────────────────────────────
+        # ── Phase 1: extract ALL reference protocore TTEs ─────────────────
+        # Each reference protocore becomes its own comparison group.
+        # ref_records is a flat list; each row carries region_id and region_idx
+        # which identifies which reference protocore it belongs to.
         app.config["JOB_RESULTS"][job_id]["progress"] = {
             "phase":   "extracting_reference",
             "message": "Extracting TTE from reference file...",
@@ -366,13 +369,29 @@ def run_tte(
         }
 
         ref_records = get_tte_records(Path(reference_file_path))
+
+        # Build a lookup: region_id -> list of ref TTE rows for that protocore
+        ref_by_protocore: dict[str, list] = {}
         for row in ref_records:
-            row["similarity"]       = "reference"
-            row["role"]             = "reference"
-            row["paras_substrates"] = []
+            row["similarity"]           = "reference"
+            row["role"]                 = "reference"
+            row["paras_substrates"]     = []
+            row["reference_protocore_id"] = row["region_id"]
+            ref_by_protocore.setdefault(row["region_id"], []).append(row)
+
+        # Add one reference row per protocore into results
         results.extend(ref_records)
 
-        # ── Phase 2: per input file — extract TTEs and compute similarity ─
+        ref_protocore_ids = list(ref_by_protocore.keys())
+        app.logger.info(
+            "Reference file has %d protocore(s): %s",
+            len(ref_protocore_ids), ref_protocore_ids
+        )
+
+        # ── Phase 2: per input file — compare against EACH ref protocore ──
+        # For each input protocore row, we create one result entry per
+        # reference protocore, each carrying its own similarity score and
+        # reference_protocore_id so the frontend can group them into tables.
         for file_idx, input_path in enumerate(input_file_paths):
             clean_fname = re.sub(r'^[a-f0-9\-]+_(?:IN_\d+|REF)_', '', Path(input_path).name)
 
@@ -396,19 +415,43 @@ def run_tte(
             }
 
             for row in input_records:
-                row["role"]   = "input"
-                max_sim       = None
-                for ref in ref_records:
-                    sim = get_similarity(row.get("tte_seq", ""), ref.get("tte_seq", ""))
-                    if sim is None:
-                        continue
-                    if max_sim is None or sim > max_sim:
-                        max_sim = sim
-                row["similarity"] = max_sim
+                row["role"] = "input"
 
-            results.extend(input_records)
+                if len(ref_protocore_ids) == 1:
+                    # Single reference protocore — original behaviour: one row per input
+                    ref_id      = ref_protocore_ids[0]
+                    ref_rows    = ref_by_protocore[ref_id]
+                    best_sim    = None
+                    for ref in ref_rows:
+                        sim = get_similarity(row.get("tte_seq", ""), ref.get("tte_seq", ""))
+                        if sim is None:
+                            continue
+                        if best_sim is None or sim > best_sim:
+                            best_sim = sim
+                    row["similarity"]             = best_sim
+                    row["reference_protocore_id"] = ref_id
+                    results.append(row)
 
-        # ── Phase 3 (optional): PARAS on all input files ─────────────────
+                else:
+                    # Multiple reference protocores — emit one row per ref protocore
+                    # so each table gets its own comparison entry.
+                    for ref_id, ref_rows in ref_by_protocore.items():
+                        best_sim = None
+                        for ref in ref_rows:
+                            sim = get_similarity(row.get("tte_seq", ""), ref.get("tte_seq", ""))
+                            if sim is None:
+                                continue
+                            if best_sim is None or sim > best_sim:
+                                best_sim = sim
+
+                        # Copy the row so each ref-protocore table gets an independent entry
+                        import copy
+                        row_copy = copy.deepcopy(row)
+                        row_copy["similarity"]             = best_sim
+                        row_copy["reference_protocore_id"] = ref_id
+                        results.append(row_copy)
+
+        # ── Phase 3 (optional): PARAS on all input files ──────────────────
         if run_paras_annotation:
             app.config["JOB_RESULTS"][job_id]["progress"] = {
                 "phase":   "paras",
@@ -425,8 +468,6 @@ def run_tte(
             gb_file_paths.update(annotated_files)
 
         # ── Phase 4: extract protocores ───────────────────────────────────
-        # Use the PARAS-annotated GBK if it exists so downloaded protocore
-        # files carry PARAS qualifiers; fall back to the original otherwise.
         for input_path in input_file_paths:
             stem       = Path(input_path).stem
             clean_stem = re.sub(r'^[a-f0-9\-]+_(?:IN_\d+|REF)_', '', stem)
@@ -443,21 +484,21 @@ def run_tte(
                     len(written), clean_stem, source.name,
                 )
 
-        app.config["JOB_RESULTS"][job_id]["status"]  = str(Status.Success).lower()
+        app.config["JOB_RESULTS"][job_id]["status"]   = str(Status.Success).lower()
         app.config["JOB_RESULTS"][job_id]["message"]  = "TTE extraction & similarity completed"
         app.config["JOB_RESULTS"][job_id]["results"]  = results
         app.config["JOB_RESULTS"][job_id]["gb_file_paths"] = gb_file_paths
         app.config["JOB_RESULTS"][job_id]["has_paras"] = run_paras_annotation
         app.config["JOB_RESULTS"][job_id]["protocore_files"] = {
             key: Path(path).name for key, path in gb_file_paths.items()
-            if not key.endswith("_PARAS.gbk")          # only protocore entries, not whole-file annotations
+            if not key.endswith("_PARAS.gbk")
         }
 
     except Exception as e:
         app.logger.error("run_tte error for job %s: %s", job_id, e)
         app.config["JOB_RESULTS"][job_id]["status"]  = str(Status.Failure).lower()
-        app.config["JOB_RESULTS"][job_id]["message"]  = str(e)
-        app.config["JOB_RESULTS"][job_id]["results"]  = []
+        app.config["JOB_RESULTS"][job_id]["message"] = str(e)
+        app.config["JOB_RESULTS"][job_id]["results"] = []
 
     for path in [reference_file_path] + input_file_paths:
         try:
@@ -507,14 +548,14 @@ def submit_tte() -> dict:
         paras_model_key = "parasAllSubstrates"
 
     app.config["JOB_RESULTS"][job_id] = {
-        "status":         str(Status.Pending).lower(),
-        "message":        "TTE job is pending",
-        "job_type":       "tte",
-        "results":        [],
-        "timestamp":      timestamp,
-        "gb_file_paths":  {},
+        "status":          str(Status.Pending).lower(),
+        "message":         "TTE job is pending",
+        "job_type":        "tte",
+        "results":         [],
+        "timestamp":       timestamp,
+        "gb_file_paths":   {},
         "protocore_files": [],
-        "has_paras":      run_paras,
+        "has_paras":       run_paras,
     }
 
     os.makedirs(TEMP_DIR, exist_ok=True)
