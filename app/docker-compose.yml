@@ -10,7 +10,7 @@ services:
     container_name: paras-server
     volumes:
       - ./models:/app/models:ro
-      - antismash-db:/app/antismash_databases
+      - ./antismash_databases:/app/antismash_databases
     environment:
       - MODEL_DIR=/app/models
       - ANTISMASH_DB_DIR=/app/antismash_databases
@@ -48,6 +48,3 @@ services:
 networks:
   paras-network:
     driver: bridge
-
-volumes:
-  antismash-db:

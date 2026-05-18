@@ -170,3 +170,7 @@ condensed/out/*
 
 # Visual Studio Code
 .vscode/
+
+app/antismash_databases/*
+app/models/*
+
