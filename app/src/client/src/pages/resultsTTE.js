@@ -2,11 +2,25 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {toast} from 'react-toastify';
 import {
-    Box, Button, Checkbox, Chip, Collapse,
-    Divider, FormControlLabel, FormGroup,
-    IconButton, Paper, Table, TableBody,
-    TableCell, TableContainer, TableHead,
-    TableRow, TableSortLabel, Tooltip, Typography,
+    Box,
+    Button,
+    Checkbox,
+    Chip,
+    Collapse,
+    Divider,
+    FormControlLabel,
+    FormGroup,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel,
+    Tooltip,
+    Typography,
 } from '@mui/material';
 import {FaCopy, FaDownload, FaFilter} from 'react-icons/fa';
 import {FaFileCsv} from 'react-icons/fa6';
@@ -20,8 +34,8 @@ import Loading from '../components/Loading';
 const similarityColor = (v) =>
     typeof v !== 'number' ? 'text.disabled'
         : v >= 80 ? 'green'
-        : v >= 50 ? 'orange'
-        : 'red';
+            : v >= 50 ? 'orange'
+                : 'red';
 
 const cleanFileName = (raw) =>
     (raw || '').replace(/^[a-f0-9-]+_(?:[A-Z]+(?:_\d+)?)_/, '');
@@ -29,18 +43,20 @@ const cleanFileName = (raw) =>
 // ─── per-protocore table ──────────────────────────────────────────────────────
 
 const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, index: tableIndex}) => {
-    const [sortDirection, setSortDirection]     = useState('desc');
+    const [sortDirection, setSortDirection] = useState('desc');
     const [showMonomerFilter, setShowMonomerFilter] = useState(false);
-    const [showParasFilter, setShowParasFilter]     = useState(false);
-    const [expandedSeqs, setExpandedSeqs]           = useState(new Set());
-    const [collapsed, setCollapsed]                 = useState(false);
+    const [showParasFilter, setShowParasFilter] = useState(false);
+    const [expandedSeqs, setExpandedSeqs] = useState(new Set());
+    const [collapsed, setCollapsed] = useState(false);
 
     // ── unique filter options derived from this table's rows ─────────────────
     const uniqueMonomers = useMemo(() => {
         const s = new Set();
         rows.forEach(r => {
             if (r.monomer_pairs)
-                r.monomer_pairs.split(' | ').forEach(m => {if (m.trim()) s.add(m.trim());});
+                r.monomer_pairs.split(' | ').forEach(m => {
+                    if (m.trim()) s.add(m.trim());
+                });
         });
         return Array.from(s).sort();
     }, [rows]);
@@ -56,11 +72,11 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
     }, [rows, hasParas]);
 
     const [selectedMonomers, setSelectedMonomers] = useState(new Set());
-    const [selectedParas,    setSelectedParas]    = useState(new Set());
+    const [selectedParas, setSelectedParas] = useState(new Set());
 
     // initialise / refresh filter sets when options change
     useEffect(() => setSelectedMonomers(new Set(uniqueMonomers)), [uniqueMonomers.join(',')]); // eslint-disable-line
-    useEffect(() => setSelectedParas(new Set(uniqueParasSubs)),   [uniqueParasSubs.join(',')]); // eslint-disable-line
+    useEffect(() => setSelectedParas(new Set(uniqueParasSubs)), [uniqueParasSubs.join(',')]); // eslint-disable-line
 
     const protocoreHasAny = Object.keys(protocoreFiles).length > 0;
 
@@ -99,9 +115,9 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
         ];
         const csvRows = displayed.map(r => {
             const fname = cleanFileName(r.file);
-            const sim   = r.similarity === 'reference' ? 'reference'
+            const sim = r.similarity === 'reference' ? 'reference'
                 : typeof r.similarity === 'number' ? r.similarity.toFixed(2) : '';
-            const base  = [
+            const base = [
                 protocoreId, fname, r.file_locus || '', r.region_id || '',
                 r.monomer_pairs || '', r.CDS_locus_tag || '', r.tte_len || '', sim, r.tte_seq || '',
             ];
@@ -116,8 +132,8 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
             .join('\n');
         const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        const a   = document.createElement('a');
-        a.href     = url;
+        const a = document.createElement('a');
+        a.href = url;
         a.download = `tte_${protocoreId.replace(/[^a-zA-Z0-9_-]/g, '_')}.csv`;
         a.click();
         URL.revokeObjectURL(url);
@@ -177,33 +193,33 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                     <Paper sx={{p: 1.5, mt: 1}} variant="outlined">
                                         <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedMonomers(new Set(uniqueMonomers))}>
+                                                    onClick={() => setSelectedMonomers(new Set(uniqueMonomers))}>
                                                 Select all
                                             </Button>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedMonomers(new Set())}>
+                                                    onClick={() => setSelectedMonomers(new Set())}>
                                                 Clear all
                                             </Button>
                                         </Box>
                                         <FormGroup row sx={{gap: 0.5}}>
                                             {uniqueMonomers.map(m => (
                                                 <FormControlLabel key={m}
-                                                    control={
-                                                        <Checkbox size="small"
-                                                            checked={selectedMonomers.has(m)}
-                                                            onChange={() => setSelectedMonomers(prev => {
-                                                                const n = new Set(prev);
-                                                                n.has(m) ? n.delete(m) : n.add(m);
-                                                                return n;
-                                                            })}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <Chip label={m} size="small"
-                                                            variant={selectedMonomers.has(m) ? 'filled' : 'outlined'}
-                                                            color={selectedMonomers.has(m) ? 'secondary' : 'default'}
-                                                        />
-                                                    }
+                                                                  control={
+                                                                      <Checkbox size="small"
+                                                                                checked={selectedMonomers.has(m)}
+                                                                                onChange={() => setSelectedMonomers(prev => {
+                                                                                    const n = new Set(prev);
+                                                                                    n.has(m) ? n.delete(m) : n.add(m);
+                                                                                    return n;
+                                                                                })}
+                                                                      />
+                                                                  }
+                                                                  label={
+                                                                      <Chip label={m} size="small"
+                                                                            variant={selectedMonomers.has(m) ? 'filled' : 'outlined'}
+                                                                            color={selectedMonomers.has(m) ? 'secondary' : 'default'}
+                                                                      />
+                                                                  }
                                                 />
                                             ))}
                                         </FormGroup>
@@ -225,33 +241,33 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                     <Paper sx={{p: 1.5, mt: 1}} variant="outlined">
                                         <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedParas(new Set(uniqueParasSubs))}>
+                                                    onClick={() => setSelectedParas(new Set(uniqueParasSubs))}>
                                                 Select all
                                             </Button>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedParas(new Set())}>
+                                                    onClick={() => setSelectedParas(new Set())}>
                                                 Clear all
                                             </Button>
                                         </Box>
                                         <FormGroup row sx={{gap: 0.5}}>
                                             {uniqueParasSubs.map(s => (
                                                 <FormControlLabel key={s}
-                                                    control={
-                                                        <Checkbox size="small"
-                                                            checked={selectedParas.has(s)}
-                                                            onChange={() => setSelectedParas(prev => {
-                                                                const n = new Set(prev);
-                                                                n.has(s) ? n.delete(s) : n.add(s);
-                                                                return n;
-                                                            })}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <Chip label={s} size="small"
-                                                            variant={selectedParas.has(s) ? 'filled' : 'outlined'}
-                                                            color={selectedParas.has(s) ? 'secondary' : 'default'}
-                                                        />
-                                                    }
+                                                                  control={
+                                                                      <Checkbox size="small"
+                                                                                checked={selectedParas.has(s)}
+                                                                                onChange={() => setSelectedParas(prev => {
+                                                                                    const n = new Set(prev);
+                                                                                    n.has(s) ? n.delete(s) : n.add(s);
+                                                                                    return n;
+                                                                                })}
+                                                                      />
+                                                                  }
+                                                                  label={
+                                                                      <Chip label={s} size="small"
+                                                                            variant={selectedParas.has(s) ? 'filled' : 'outlined'}
+                                                                            color={selectedParas.has(s) ? 'secondary' : 'default'}
+                                                                      />
+                                                                  }
                                                 />
                                             ))}
                                         </FormGroup>
@@ -297,13 +313,13 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
 
                             <TableBody>
                                 {displayed.map((r, idx) => {
-                                    const fname       = cleanFileName(r.file);
-                                    const fileStem    = fname.replace(/\.(gb|gbk)$/i, '');
-                                    const lookupKey   = `${fileStem}::${r.region_id}`;
+                                    const fname = cleanFileName(r.file);
+                                    const fileStem = fname.replace(/\.(gb|gbk)$/i, '');
+                                    const lookupKey = `${fileStem}::${r.region_id}`;
                                     const protocoreFname = protocoreFiles[lookupKey] || null;
                                     const isReference = r.similarity === 'reference';
-                                    const seqKey      = `${protocoreId}-${idx}`;
-                                    const expanded    = expandedSeqs.has(seqKey);
+                                    const seqKey = `${protocoreId}-${idx}`;
+                                    const expanded = expandedSeqs.has(seqKey);
 
                                     return (
                                         <TableRow key={seqKey} hover sx={{
@@ -312,7 +328,7 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                             <TableCell>
                                                 {isReference && (
                                                     <Chip label="ref" size="small" color="default"
-                                                        variant="outlined" sx={{mr: 0.5, height: 16, fontSize: 10}}/>
+                                                          variant="outlined" sx={{mr: 0.5, height: 16, fontSize: 10}}/>
                                                 )}
                                                 {fname}
                                             </TableCell>
@@ -362,11 +378,21 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                             {hasParas && (
                                                 <TableCell align="center" sx={{verticalAlign: 'top', pt: 1}}>
                                                     {isReference ? (
-                                                        <Typography variant="caption" color="text.disabled">–</Typography>
+                                                        <Typography variant="caption"
+                                                                    color="text.disabled">–</Typography>
                                                     ) : (r.paras_substrates || []).length > 0 ? (
-                                                        <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5}}>
+                                                        <Box sx={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'flex-start',
+                                                            gap: 0.5
+                                                        }}>
                                                             {(r.paras_substrates || []).map((p, i) => (
-                                                                <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                                                                <Box key={i} sx={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 0.5
+                                                                }}>
                                                                     <Chip
                                                                         label={p.substrate_3letter || p.substrate}
                                                                         size="small"
@@ -383,7 +409,8 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                                             ))}
                                                         </Box>
                                                     ) : (
-                                                        <Typography variant="caption" color="text.disabled">–</Typography>
+                                                        <Typography variant="caption"
+                                                                    color="text.disabled">–</Typography>
                                                     )}
                                                 </TableCell>
                                             )}
@@ -393,16 +420,17 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                                     {protocoreFname ? (
                                                         <Tooltip title={`Download ${protocoreFname}`}>
                                                             <IconButton size="small"
-                                                                onClick={() => window.open(
-                                                                    `/api/download_file/${jobId}/${encodeURIComponent(protocoreFname)}`,
-                                                                    '_blank'
-                                                                )}
+                                                                        onClick={() => window.open(
+                                                                            `/api/download_file/${jobId}/${encodeURIComponent(protocoreFname)}`,
+                                                                            '_blank'
+                                                                        )}
                                                             >
                                                                 <FaDownload size={12}/>
                                                             </IconButton>
                                                         </Tooltip>
                                                     ) : (
-                                                        <Typography variant="caption" color="text.disabled">–</Typography>
+                                                        <Typography variant="caption"
+                                                                    color="text.disabled">–</Typography>
                                                     )}
                                                 </TableCell>
                                             )}
@@ -413,7 +441,7 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                                 {displayed.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={hasParas ? 10 : 9} align="center"
-                                            sx={{py: 4, color: 'text.disabled', fontStyle: 'italic'}}>
+                                                   sx={{py: 4, color: 'text.disabled', fontStyle: 'italic'}}>
                                             No results match the current filters.
                                         </TableCell>
                                     </TableRow>
@@ -426,7 +454,7 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
                         Showing {displayed.length} of {rows.length} results
                         {hasParas && (
                             <Chip label="+ PARAS predictions" size="small" color="secondary"
-                                variant="outlined" sx={{ml: 1}}/>
+                                  variant="outlined" sx={{ml: 1}}/>
                         )}
                     </Typography>
                 </Box>
@@ -439,12 +467,12 @@ const ProtocoreTable = ({protocoreId, rows, hasParas, protocoreFiles, jobId, ind
 
 const ResultsTTE = () => {
     const {jobId} = useParams();
-    const [results,        setResults]       = useState(null);
-    const [isLoading,      setIsLoading]     = useState(true);
-    const [hasParas,       setHasParas]      = useState(false);
-    const [protocoreFiles, setProtocoreFiles]= useState({});
-    const [progress,       setProgress]      = useState(null);
-    const [nowTs,          setNowTs]         = useState(Date.now());
+    const [results, setResults] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasParas, setHasParas] = useState(false);
+    const [protocoreFiles, setProtocoreFiles] = useState({});
+    const [progress, setProgress] = useState(null);
+    const [nowTs, setNowTs] = useState(Date.now());
 
     // live clock while loading
     useEffect(() => {
@@ -466,14 +494,14 @@ const ResultsTTE = () => {
                     const payload = data.payload || {};
                     setHasParas(payload.has_paras || false);
                     if (payload.protocore_files) setProtocoreFiles(payload.protocore_files || {});
-                    if (payload.progress)        setProgress(payload.progress);
+                    if (payload.progress) setProgress(payload.progress);
                     setResults(payload.results || []);
                     setIsLoading(false);
                     clearInterval(intervalId);
 
                 } else if (data.status === 'pending') {
                     if (data.payload?.has_paras !== undefined) setHasParas(data.payload.has_paras);
-                    if (data.payload?.progress)                setProgress(data.payload.progress);
+                    if (data.payload?.progress) setProgress(data.payload.progress);
 
                 } else if (data.status === 'failure') {
                     toast.error(data.message);
@@ -522,8 +550,10 @@ const ResultsTTE = () => {
             {type: 'application/json'}
         );
         const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href = url; a.download = 'tte_results.json'; a.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tte_results.json';
+        a.click();
         URL.revokeObjectURL(url);
     };
 
@@ -536,10 +566,10 @@ const ResultsTTE = () => {
         ];
         const csvRows = (results || []).map(r => {
             const fname = cleanFileName(r.file);
-            const sim   = r.similarity === 'reference' ? 'reference'
+            const sim = r.similarity === 'reference' ? 'reference'
                 : typeof r.similarity === 'number' ? r.similarity.toFixed(2) : '';
-            const ref   = r.reference_protocore_id || '';
-            const base  = [ref, fname, r.file_locus || '', r.region_id || '',
+            const ref = r.reference_protocore_id || '';
+            const base = [ref, fname, r.file_locus || '', r.region_id || '',
                 r.monomer_pairs || '', r.CDS_locus_tag || '', r.tte_len || '', sim, r.tte_seq || ''];
             if (hasParas) {
                 base.push((r.paras_substrates || [])
@@ -552,8 +582,10 @@ const ResultsTTE = () => {
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
             .join('\n');
         const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        const a   = document.createElement('a');
-        a.href = url; a.download = 'tte_results_all.csv'; a.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tte_results_all.csv';
+        a.click();
         URL.revokeObjectURL(url);
     };
 
@@ -563,26 +595,47 @@ const ResultsTTE = () => {
             ? Math.round((progress.current / progress.total) * 100)
             : null;
 
+        const startedAt = progress?.started_at ? new Date(progress.started_at).getTime() : null;
+        const loadingElapsedSeconds = startedAt
+            ? Math.max(0, Math.floor((nowTs - startedAt) / 1000))
+            : 0;
+
         const loadingMessage = (() => {
             if (!progress) return 'Starting...';
+
             const phase = progress.phase;
-            if (phase === 'extracting_reference') return 'Extracting TTE from reference file...';
-            if (phase === 'comparing')  return `Extracting TTE from ${progress.current_file || 'input file'}...`;
-            if (phase === 'similarity') return `Computing similarity for ${progress.current_file || 'input file'}...`;
+
+            if (phase === 'extracting_reference') {
+                return 'Extracting TTE from reference file...';
+            }
+
+            if (phase === 'comparing') {
+                return `Extracting TTE from ${progress.current_file || 'input file'}...`;
+            }
+
+            if (phase === 'similarity') {
+                return `Computing similarity for ${progress.current_file || 'input file'}...`;
+            }
+
             if (phase === 'paras') {
                 if (progress.current === 0) return 'Loading PARAS model...';
-                return `Running PARAS — ${progress.message || ''}`;
+                return `Running PARAS ${progress.message ? `— ${progress.message}` : ''}`;
             }
+
             return 'Processing...';
         })();
 
         const loadingDetail = (() => {
             if (!progress) return null;
-            const phase = progress.phase;
-            if (phase === 'similarity' && progress.tte_count != null)
+
+            if (progress.phase === 'similarity' && progress.tte_count != null) {
                 return `${progress.tte_count} TTE sequence(s) found`;
-            if (phase === 'paras' && progress.current > 0)
+            }
+
+            if (progress.phase === 'paras' && progress.current > 0 && progress.total > 0) {
                 return `Domain ${progress.current} of ${progress.total}`;
+            }
+
             return null;
         })();
 
@@ -590,56 +643,83 @@ const ResultsTTE = () => {
         const isIndeterminate = progress?.phase === 'paras' && progress.current === 0;
 
         return (
-            <Box display='flex' flexDirection='column' justifyContent='center'
-                 alignItems='center' minHeight='90vh' gap={2} padding={4}>
-                <Loading frame1='Logo_trans_1.png' frame2='Logo_trans_2.png'/>
-                <Typography variant='h6' color='text.secondary'>{loadingMessage}</Typography>
+            <Box
+                display="flex"
+                flexDirection="column"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="90vh"
+                gap={2}
+                padding={4}
+            >
+                <Loading frame1="Logo_trans_1.png" frame2="Logo_trans_2.png"/>
+
+                <Typography variant="h6" color="text.secondary">
+                    {loadingMessage}
+                </Typography>
+
                 {loadingDetail && (
-                    <Typography variant='body2' color='text.secondary'>{loadingDetail}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        {loadingDetail}
+                    </Typography>
                 )}
+
                 {showProgressBar && (
                     <Box sx={{width: '100%', maxWidth: 400}}>
-                        <Box sx={{
-                            width: '100%', height: 10, borderRadius: 5,
-                            bgcolor: 'divider', overflow: 'hidden', position: 'relative',
-                        }}>
+                        <Box
+                            sx={{
+                                width: '100%',
+                                height: 10,
+                                borderRadius: 5,
+                                bgcolor: 'divider',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                        >
                             {isIndeterminate ? (
-                                <Box sx={{
-                                    width: '35%', height: '100%', borderRadius: 5,
-                                    bgcolor: 'secondary.main', position: 'absolute',
-                                    animation: 'loading-slide 1.4s ease-in-out infinite',
-                                    '@keyframes loading-slide': {
-                                        '0%': {left: '-35%'}, '100%': {left: '100%'},
-                                    },
-                                }}/>
+                                <Box
+                                    sx={{
+                                        width: '35%',
+                                        height: '100%',
+                                        borderRadius: 5,
+                                        bgcolor: 'secondary.main',
+                                        position: 'absolute',
+                                        animation: 'loading-slide 1.4s ease-in-out infinite',
+                                        '@keyframes loading-slide': {
+                                            '0%': {left: '-35%'},
+                                            '100%': {left: '100%'},
+                                        },
+                                    }}
+                                />
                             ) : (
-                                <Box sx={{
-                                    width: `${pct ?? 0}%`, height: '100%',
-                                    borderRadius: 5, bgcolor: 'secondary.main',
-                                    transition: 'width 0.4s ease',
-                                }}/>
+                                <Box
+                                    sx={{
+                                        width: `${pct ?? 0}%`,
+                                        height: '100%',
+                                        borderRadius: 5,
+                                        bgcolor: 'secondary.main',
+                                        transition: 'width 0.4s ease',
+                                    }}
+                                />
                             )}
                         </Box>
-                        <Typography variant='caption' color='text.secondary'
-                                    sx={{mt: 0.5, display: 'block', textAlign: 'center'}}>
+
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{mt: 0.5, display: 'block', textAlign: 'center'}}
+                        >
                             {isIndeterminate
-                                ?`Preparing PARAS model... ${progress?.started_at != null ? Math.max(0, Math.floor((nowTs - progress.started_at * 1000) / 1000)) : 0}s`
-                                : pct !== null ? `${pct}%` : 'Starting...'}
+                                ? `Preparing model... ${loadingElapsedSeconds}s`
+                                : pct !== null
+                                    ? `${pct}%`
+                                    : 'Starting...'}
                         </Typography>
                     </Box>
                 )}
             </Box>
         );
     }
-
-    if (!results) {
-        return (
-            <Box display='flex' justifyContent='center' alignItems='center' minHeight='80vh'>
-                <p>No results found for job ID {jobId}</p>
-            </Box>
-        );
-    }
-
     // ── main render ───────────────────────────────────────────────────────────
     return (
         <Box display='flex' flexDirection='column' overflow='hidden'>

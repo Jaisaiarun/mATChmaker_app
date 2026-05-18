@@ -1,21 +1,17 @@
 import logging
-from typing import Any
-from flask import Blueprint, Response, request, jsonify
-import requests
 import os
+import requests
+from flask import Blueprint, Response, request, jsonify
+from pikachu.general import read_smiles
+from typing import Any
 
-
+from parasect.core.github import submit_github_issues
+from parasect.database.build_database import Substrate
 from parasect.database.query_database import get_substrates_from_smiles, \
     get_substrates_from_name, get_all_substrates, get_protein_names, get_domains_from_synonym
-from parasect.database.build_database import Substrate
-from parasect.core.github import submit_github_issues
-from pikachu.general import read_smiles
-
 from .database import get_db
 
-
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-
 
 blueprint_check_smiles = Blueprint("check_smiles", __name__)
 blueprint_check_substrate_name = Blueprint("check_substrate_name", __name__)
@@ -103,7 +99,6 @@ def check_smiles() -> Response:
     """Handle SMILES structure checks and return matching substrates."""
     data = request.get_json()
     if not data or "smiles" not in data:
-
         return jsonify({"error": "Missing 'smiles' in request body"}), 400
     smiles = data["smiles"]
     try:
@@ -172,7 +167,7 @@ def cleanup_annotations(annotations: dict[str, dict[str, Any]]) -> dict[str, dic
                 continue
             else:
                 for annotation in domain_annotations["substrates"]:
-                    if 'substrateName' in annotation and 'substrateSmiles' in annotation and\
+                    if 'substrateName' in annotation and 'substrateSmiles' in annotation and \
                             annotation['substrateName'] and annotation['substrateSmiles'] and annotation['sequence'] and \
                             annotation['signature'] and annotation['extendedSignature']:
                         if domain_name not in domain_to_entries:
@@ -182,7 +177,7 @@ def cleanup_annotations(annotations: dict[str, dict[str, Any]]) -> dict[str, dic
                                                               "substrates": [],
                                                               "annotation_type": annotation_type}
                         domain_to_entries[domain_name]["substrates"].append({"name": annotation['substrateName'],
-                                                                             "smiles": annotation['substrateSmiles'],})
+                                                                             "smiles": annotation['substrateSmiles'], })
 
         if domain_to_entries:
             protein_to_entries[synonym] = {"domains": domain_to_entries,
@@ -198,7 +193,7 @@ def submit_annotations():
     token = data.get("turnstileToken")
     if not token:
         return jsonify({"error": "missing_turnstile_token"}), 400
-    
+
     # Optional: capture client IP for verification
     client_ip = request.headers.get("CF-Connecting-IP") or request.remote_addr
 
@@ -215,7 +210,7 @@ def submit_annotations():
         ver = r.json()
     except Exception as e:
         return jsonify({"error": "turnstile_verification_failed", "detail": str(e)}), 502
-    
+
     if not ver.get("success"):
         # ver contains fields like "error-codes", "action", "cdata"
         return jsonify({"error": "captcha_failed", "detail": ver}), 400
@@ -238,9 +233,9 @@ def submit_annotations():
 
 
 def create_github_issue(
-    annotations: dict[str, dict[str, Any]],
-    orcid: str,
-    references: list[dict[str, str]]
+        annotations: dict[str, dict[str, Any]],
+        orcid: str,
+        references: list[dict[str, str]]
 ) -> str:
     """
     Create one GitHub issue per protein
@@ -255,5 +250,3 @@ def create_github_issue(
     submit_github_issues(session, annotations, orcid, references)
 
     return "https://github.com/BTheDragonMaster/parasect/issues"
-
-

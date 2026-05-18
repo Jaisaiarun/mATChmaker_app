@@ -32,10 +32,10 @@ class ResponseData:
     """A response object for the server."""
 
     def __init__(
-        self,
-        status: Status,
-        payload: Optional[Dict[str, Any]] = None,
-        message: Optional[str] = None,
+            self,
+            status: Status,
+            payload: Optional[Dict[str, Any]] = None,
+            message: Optional[str] = None,
     ) -> None:
         """Create a new response object.
 

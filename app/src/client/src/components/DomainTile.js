@@ -1,22 +1,18 @@
-import React, {useState, useEffect, useMemo} from 'react';
-import {
-    ExpandMore,
-    ExpandLess,
-    CheckCircle
-} from '@mui/icons-material';
+import React, {useEffect, useMemo, useState} from 'react';
+import {CheckCircle, ExpandLess, ExpandMore} from '@mui/icons-material';
 
 import {
+    Autocomplete,
     Box,
     Button,
-    Autocomplete,
-    TextField,
-    FormControlLabel,
     Checkbox,
-    Popper,
     Collapse,
+    FormControlLabel,
     IconButton,
-    Typography,
-    Tooltip
+    Popper,
+    TextField,
+    Tooltip,
+    Typography
 } from '@mui/material';
 import {FaFingerprint} from 'react-icons/fa';
 
@@ -176,7 +172,7 @@ const DomainTile = ({result, domainIndex, protein_name, onAnnotationChange}) => 
             type = hasSequenceMatch ? 'correction' : 'new_entry';
         }
 
-        onAnnotationChange?.(domainName, substrates.map(s => ({ ...s })), type);
+        onAnnotationChange?.(domainName, substrates.map(s => ({...s})), type);
 
         setAnnotationType(type);
     };
@@ -402,19 +398,19 @@ const DomainTile = ({result, domainIndex, protein_name, onAnnotationChange}) => 
                 {/* <IconButton onClick={toggleExpanded} size="small">
                     {expanded ? <ExpandLess/> : <ExpandMore/>}
                 </IconButton> */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {isAnnotated && (
-                    <Tooltip title="Annotated" arrow>
-                      <CheckCircle
-                        fontSize="small"
-                        sx={{ color: 'success.main' }}
-                        aria-label="Annotated"
-                      />
-                    </Tooltip>
-                  )}
-                  <IconButton onClick={toggleExpanded} size="small" aria-label={expanded ? 'Collapse' : 'Expand'}>
-                    {expanded ? <ExpandLess/> : <ExpandMore/>}
-                  </IconButton>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                    {isAnnotated && (
+                        <Tooltip title="Annotated" arrow>
+                            <CheckCircle
+                                fontSize="small"
+                                sx={{color: 'success.main'}}
+                                aria-label="Annotated"
+                            />
+                        </Tooltip>
+                    )}
+                    <IconButton onClick={toggleExpanded} size="small" aria-label={expanded ? 'Collapse' : 'Expand'}>
+                        {expanded ? <ExpandLess/> : <ExpandMore/>}
+                    </IconButton>
                 </Box>
             </Box>
 

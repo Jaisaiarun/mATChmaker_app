@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import { Box, Typography, Divider, TextField, Button } from '@mui/material';
+import React, {useState} from 'react';
+import {toast} from 'react-toastify';
+import {Box, Button, Divider, TextField, Typography} from '@mui/material';
 
 /**
  * Retrieve component that displays the retrieve page content.
- * 
+ *
  * @returns {React.ReactElement} - The component showing the retrieve page content.
  */
 const Retrieve = () => {
@@ -19,22 +19,23 @@ const Retrieve = () => {
     };
 
     return (
-        <Box 
-            display='flex' 
-            flexDirection='column' 
-            alignItems='left' 
-            padding={4} 
+        <Box
+            display='flex'
+            flexDirection='column'
+            alignItems='left'
+            padding={4}
             margin='auto'
         >
-            
+
             <Typography variant='h4' gutterBottom>
                 Retrieve results
             </Typography>
-            <Divider />
+            <Divider/>
 
-            <Box sx={{ mt: 4 }}>
+            <Box sx={{mt: 4}}>
                 <Typography variant='body1' gutterBottom>
-                    All jobs are automatically deleted after 7 days. Please enter your Job ID below to retrieve the results.
+                    All jobs are automatically deleted after 7 days. Please enter your Job ID below to retrieve the
+                    results.
                 </Typography>
             </Box>
 
@@ -49,9 +50,9 @@ const Retrieve = () => {
             />
 
             <Box mt={1} display='flex' justifyContent='left' width='100%' gap={2}>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
+                <Button
+                    variant="contained"
+                    color="primary"
                     onClick={handleRetrieve}
                 >
                     Submit

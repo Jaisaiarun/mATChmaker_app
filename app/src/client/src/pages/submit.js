@@ -1,7 +1,20 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import { Box, Button, Divider, TextField, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, CircularProgress, Typography, Input } from '@mui/material';
-import { MdSettings, MdBugReport } from 'react-icons/md';
+import React, {useState} from 'react';
+import {toast} from 'react-toastify';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Divider,
+    FormControl,
+    FormControlLabel,
+    FormLabel,
+    Input,
+    Radio,
+    RadioGroup,
+    TextField,
+    Typography
+} from '@mui/material';
+import {MdSettings} from 'react-icons/md';
 
 import SettingsModal from '../components/SettingsModal';
 
@@ -9,19 +22,19 @@ const exampleFastaInput = '>dptA\nMDMQSQRLGVTAAQQSVWLAGQLADDHRLYHCAAYLSLTGSIDPRT
 
 /**
  * Component to submit data to the server.
- * 
+ *
  * @param {Object} props - The props of the component.
  * @param {string} props.imageSrc - The path to the image.
  * @param {string} props.label - The label for the radio button.
  * @returns {React.ReactElement} - The submit component.
  */
-const RadioLabel = ({ imageSrc, label }) => (
+const RadioLabel = ({imageSrc, label}) => (
     <Box display="flex" alignItems="center">
         <Box
             component="img"
             src={imageSrc}
             alt=""
-            sx={{ width: 40, height: 40, marginRight: 1 }}
+            sx={{width: 40, height: 40, marginRight: 1}}
         />
         <Typography variant="body1">{label}</Typography>
     </Box>
@@ -30,7 +43,7 @@ const RadioLabel = ({ imageSrc, label }) => (
 
 /**
  * Component to submit data to the server.
- * 
+ *
  * @returns {React.ReactElement} - The submit component.
  */
 const Submit = () => {
@@ -62,7 +75,7 @@ const Submit = () => {
     function handleLoadExample() {
         setSelectedInputType('fasta');
         setSelectedInput(exampleFastaInput);
-    };
+    }
 
     // refresh the page
     function handleRefresh() {
@@ -71,7 +84,7 @@ const Submit = () => {
 
         // reload the page
         window.location.reload();
-    };
+    }
 
     // handle file upload
     const handleFileUpload = async (e) => {
@@ -83,7 +96,8 @@ const Submit = () => {
                 setSelectedInput(fileContent); // set the file content into selectedInput
             };
             reader.readAsText(file);
-        };
+        }
+
     };
 
     // handle form submission
@@ -103,13 +117,14 @@ const Submit = () => {
         try {
             const response = await fetch('/api/submit_raw', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data})
             });
 
             if (!response.ok) {
                 throw new Error('Network response was not ok!');
-            };
+            }
+
 
             const json = await response.json();
 
@@ -120,39 +135,41 @@ const Submit = () => {
                 toast.warn(json.message);
             } else if (json.status === 'failure') {
                 toast.error(json.message);
-            };
+            }
+
         } catch (error) {
             console.error('Error:', error);
             toast.error(error.message);
-        };
+        }
+
 
         setIsLoading(false);
     };
 
     return (
         <>
-            <Box 
-                display='flex' 
-                flexDirection='column' 
-                alignItems='left' 
-                padding={4} 
+            <Box
+                display='flex'
+                flexDirection='column'
+                alignItems='left'
+                padding={4}
                 margin='auto'
             >
                 <Typography variant='h4' gutterBottom>
                     Submit your data
                 </Typography>
-                <Divider />
-                
+                <Divider/>
+
                 {/* input method selection */}
-                <FormControl component='fieldset' sx={{ mt: 3 }}>
+                <FormControl component='fieldset' sx={{mt: 3}}>
                     <FormLabel component='legend'>Input method</FormLabel>
                     <RadioGroup
                         row
                         value={inputMethod}
                         onChange={(e) => setInputMethod(e.target.value)}
                     >
-                        <FormControlLabel value='upload' control={<Radio />} label='Upload file' />
-                        <FormControlLabel value='paste' control={<Radio />} label='Paste data' />
+                        <FormControlLabel value='upload' control={<Radio/>} label='Upload file'/>
+                        <FormControlLabel value='paste' control={<Radio/>} label='Paste data'/>
                     </RadioGroup>
                 </FormControl>
 
@@ -164,13 +181,13 @@ const Submit = () => {
                         value={selectedInputType}
                         onChange={(e) => setSelectedInputType(e.target.value)}
                     >
-                        <FormControlLabel value='fasta' control={<Radio />} label='FASTA' />
-                        <FormControlLabel value='gbk' control={<Radio />} label='GBK' />
+                        <FormControlLabel value='fasta' control={<Radio/>} label='FASTA'/>
+                        <FormControlLabel value='gbk' control={<Radio/>} label='GBK'/>
                     </RadioGroup>
                 </FormControl>
-                
+
                 {/* text field or file upload */}
-                <Box margin={1} >
+                <Box margin={1}>
                     {inputMethod === 'paste' ? (
                         <TextField
                             label='Input adenylation domain data (FASTA or GBK)'
@@ -184,13 +201,13 @@ const Submit = () => {
                             placeholder='Paste your sequence here'
                         />
                     ) : (
-                        <Box width='100%' sx={{ mt: 3, mb: 3 }}>
+                        <Box width='100%' sx={{mt: 3, mb: 3}}>
                             <Typography variant='body1' gutterBottom>
                                 Upload your {selectedInputType.toUpperCase()} file:
                             </Typography>
                             <Input
                                 type='file'
-                                inputProps={{ accept: '.fasta,.fa,.gbk' }} // accept FASTA or GBK files
+                                inputProps={{accept: '.fasta,.fa,.gbk'}} // accept FASTA or GBK files
                                 onChange={handleFileUpload}
                             />
                         </Box>
@@ -199,8 +216,8 @@ const Submit = () => {
                     {/* load example button */}
                     {inputMethod === 'paste' && (
                         <Button
-                            ariant='text' 
-                            color='primary' 
+                            ariant='text'
+                            color='primary'
                             onClick={handleLoadExample}
                             disabled={selectedInputType === 'gbk'}
                         >
@@ -216,39 +233,39 @@ const Submit = () => {
                         value={selectedModel}
                         onChange={(e) => setSelectedModel(e.target.value)}
                     >
-                        <FormControlLabel 
-                            value='parasAllSubstrates' 
-                            control={<Radio />} 
+                        <FormControlLabel
+                            value='parasAllSubstrates'
+                            control={<Radio/>}
                             label={
-                                <RadioLabel 
-                                    imageSrc={'/paras.png'} 
+                                <RadioLabel
+                                    imageSrc={'/paras.png'}
                                     label={'PARAS (all substrates): predict adenylation domain substrate specificty for a pre-defined list of 223 substrates'}
-                                />} 
+                                />}
                         />
-                        <FormControlLabel 
-                            value='parasCommonSubstrates' 
-                            control={<Radio />} 
+                        <FormControlLabel
+                            value='parasCommonSubstrates'
+                            control={<Radio/>}
                             label={
-                                <RadioLabel 
-                                    imageSrc={'/paras.png'} 
+                                <RadioLabel
+                                    imageSrc={'/paras.png'}
                                     label={'PARAS (common substrates): predict adenylation domain substrate specificty for a pre-defined list of 34 common substrates'}
                                 />}
                         />
-                        <FormControlLabel 
-                            value='parasect' 
-                            control={<Radio />} 
+                        <FormControlLabel
+                            value='parasect'
+                            control={<Radio/>}
                             label={
-                                <RadioLabel 
-                                    imageSrc={'/parasect.png'} 
+                                <RadioLabel
+                                    imageSrc={'/parasect.png'}
                                     label={'PARASECT: predict if a list of pre-defined and/or user-supplied substrates interact with the adenylation domains. This model is trained on fungal and bacterial data.'}
                                 />}
                         />
-                        <FormControlLabel 
-                            value='parasectBacterial' 
-                            control={<Radio />} 
+                        <FormControlLabel
+                            value='parasectBacterial'
+                            control={<Radio/>}
                             label={
-                                <RadioLabel 
-                                    imageSrc={'/parasect.png'} 
+                                <RadioLabel
+                                    imageSrc={'/parasect.png'}
                                     label={'PARASECT (bacterial): predict if a list of pre-defined and/or user-supplied substrates interact with the adenylation domains. This model is trained on bacterial data only.'}
                                 />
                             }
@@ -261,14 +278,14 @@ const Submit = () => {
                     <Button
                         variant='contained'
                         color='primary'
-                        startIcon={<MdSettings size={20} style={{ fill: 'white' }}/>}
+                        startIcon={<MdSettings size={20} style={{fill: 'white'}}/>}
                         onClick={handleOpenSettingsModal}
                     >
                         Settings
                     </Button>
-                    <Button 
-                        variant='contained' 
-                        color='primary' 
+                    <Button
+                        variant='contained'
+                        color='primary'
                         onClick={handleRefresh}
                     >
                         Refresh
@@ -279,7 +296,7 @@ const Submit = () => {
                         onClick={handleSubmit}
                         disabled={isLoading || !selectedInput}
                     >
-                        {isLoading ? <CircularProgress size={24} /> : 'Submit'}
+                        {isLoading ? <CircularProgress size={24}/> : 'Submit'}
                     </Button>
                 </Box>
             </Box>

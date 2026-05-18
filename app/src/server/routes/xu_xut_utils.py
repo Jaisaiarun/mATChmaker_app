@@ -1,10 +1,10 @@
 import re
-from dataclasses import dataclass, field
-from typing import Optional
-from pathlib import Path
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqFeature import SeqFeature, FeatureLocation
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Optional
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -14,6 +14,7 @@ DOMAINS_OF_INTEREST = {"condensation", "epimerization", "amp-binding", "pcp"}
 
 PATTERN_XUT_1 = r"FF..GG.S"
 PATTERN_XUT_2 = r"[FIY][FIMVY]..G[GAI].S"
+
 
 # ── Dataclasses ───────────────────────────────────────────────────────────────
 
@@ -498,11 +499,11 @@ def build_xut_buffer(cds_map: dict[str, CDS], seq: str, is_protein: bool) -> lis
     for lt, cds in cds_map.items():
         if not cds.translation:
             continue
-        for pattern in (PATTERN_XUT_1, PATTERN_XUT_2):       # ← search both
+        for pattern in (PATTERN_XUT_1, PATTERN_XUT_2):  # ← search both
             for m in re.finditer(pattern, cds.translation):
                 aa_cut = max(0, m.start() - 30)
-                site   = cds.start + aa_cut if is_protein else cds.start + aa_cut * 3
-                site   = max(bgc_start, min(site, bgc_end))
+                site = cds.start + aa_cut if is_protein else cds.start + aa_cut * 3
+                site = max(bgc_start, min(site, bgc_end))
                 sites.append(site)
 
     boundaries = sorted(set([bgc_start] + sites + [bgc_end]))
@@ -514,15 +515,15 @@ def build_xut_buffer(cds_map: dict[str, CDS], seq: str, is_protein: bool) -> lis
         if is_protein:
             sequence = seq[start:end]
         else:
-            nt_chunk   = seq[start:end]
+            nt_chunk = seq[start:end]
             usable_len = (len(nt_chunk) // 3) * 3
-            sequence   = str(Seq(nt_chunk[:usable_len]).translate()) if usable_len > 0 else ""
+            sequence = str(Seq(nt_chunk[:usable_len]).translate()) if usable_len > 0 else ""
         xut_buffer.append({
-            "start":           start,
-            "end":             end,
-            "label":           name_xut_region(start, end, cds_map),
+            "start": start,
+            "end": end,
+            "label": name_xut_region(start, end, cds_map),
             "module_position": i + 1,
-            "sequence":        sequence,
+            "sequence": sequence,
         })
     return xut_buffer
 
@@ -539,7 +540,7 @@ def build_xu_buffer(cds_map: dict[str, CDS], seq: str, is_protein: bool) -> list
             if is_protein:
                 site = domain.start - 16
             else:
-                site = domain.start - 48          # 48 nt upstream
+                site = domain.start - 48  # 48 nt upstream
             site = max(bgc_start, min(site, bgc_end))
             sites.append(site)
 
@@ -553,14 +554,14 @@ def build_xu_buffer(cds_map: dict[str, CDS], seq: str, is_protein: bool) -> list
             sequence = seq[start:end]
         else:
             nt_frag = seq[start:end]
-            usable  = (len(nt_frag) // 3) * 3
+            usable = (len(nt_frag) // 3) * 3
             sequence = str(Seq(nt_frag[:usable]).translate()) if usable > 0 else ""
         xu_buffer.append({
-            "start":           start,
-            "end":             end,
-            "label":           name_xu_region(start, end, cds_map),
+            "start": start,
+            "end": end,
+            "label": name_xu_region(start, end, cds_map),
             "module_position": i,
-            "sequence":        sequence,
+            "sequence": sequence,
         })
     return xu_buffer
 
@@ -732,6 +733,7 @@ def write_xu_annotations(
 import os
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
+
 
 def write_annotations(
         gbk_path: str,

@@ -77,7 +77,7 @@ const theme = createTheme({
             light: '#3D9490',
             contrastText: '#FEFCF5',
         },
-        error: { main: '#8C2D4F' },
+        error: {main: '#8C2D4F'},
         background: {
             default: '#F2E8D0',
             paper: '#FEFCF5',
@@ -88,16 +88,16 @@ const theme = createTheme({
         },
         divider: '#E0CFA4',
     },
-    shape: { borderRadius: 8 },
+    shape: {borderRadius: 8},
     typography: {
         fontFamily: "'Instrument Sans', system-ui, sans-serif",
-        h1: { fontFamily: "'DM Serif Display', Georgia, serif" },
-        h2: { fontFamily: "'DM Serif Display', Georgia, serif" },
-        h3: { fontFamily: "'DM Serif Display', Georgia, serif" },
-        h4: { fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 400 },
-        h5: { fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 400 },
-        h6: { fontWeight: 600, letterSpacing: '-0.01em' },
-        button: { textTransform: 'none', fontWeight: 600, letterSpacing: '0.01em' },
+        h1: {fontFamily: "'DM Serif Display', Georgia, serif"},
+        h2: {fontFamily: "'DM Serif Display', Georgia, serif"},
+        h3: {fontFamily: "'DM Serif Display', Georgia, serif"},
+        h4: {fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 400},
+        h5: {fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 400},
+        h6: {fontWeight: 600, letterSpacing: '-0.01em'},
+        button: {textTransform: 'none', fontWeight: 600, letterSpacing: '0.01em'},
     },
     components: {
         MuiButton: {
@@ -106,15 +106,15 @@ const theme = createTheme({
                     borderRadius: 8,
                     padding: '8px 20px',
                     boxShadow: 'none',
-                    '&:hover': { boxShadow: '0 2px 8px rgba(28,26,20,0.15)' },
+                    '&:hover': {boxShadow: '0 2px 8px rgba(28,26,20,0.15)'},
                 },
                 containedPrimary: {
                     background: 'linear-gradient(135deg, #C9973E 0%, #A87828 100%)',
-                    '&:hover': { background: 'linear-gradient(135deg, #D4A850 0%, #B8893A 100%)' },
+                    '&:hover': {background: 'linear-gradient(135deg, #D4A850 0%, #B8893A 100%)'},
                 },
                 containedSecondary: {
                     background: 'linear-gradient(135deg, #3D9490 0%, #2A6B68 100%)',
-                    '&:hover': { background: 'linear-gradient(135deg, #4AA8A4 0%, #347A77 100%)' },
+                    '&:hover': {background: 'linear-gradient(135deg, #4AA8A4 0%, #347A77 100%)'},
                 },
             },
         },
@@ -128,7 +128,7 @@ const theme = createTheme({
         },
         MuiPaper: {
             styleOverrides: {
-                root: { backgroundImage: 'none' },
+                root: {backgroundImage: 'none'},
             },
         },
         MuiMenuItem: {
@@ -138,21 +138,21 @@ const theme = createTheme({
                     gap: 4,
                     borderRadius: 6,
                     margin: '1px 4px',
-                    '&:hover': { backgroundColor: '#F2E8D0' },
+                    '&:hover': {backgroundColor: '#F2E8D0'},
                 },
             },
         },
         MuiDivider: {
-            styleOverrides: { root: { borderColor: '#E0CFA4' } },
+            styleOverrides: {root: {borderColor: '#E0CFA4'}},
         },
         MuiTextField: {
             styleOverrides: {
                 root: {
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: '#FEFCF5',
-                        '& fieldset': { borderColor: '#E0CFA4' },
-                        '&:hover fieldset': { borderColor: '#B8893A' },
-                        '&.Mui-focused fieldset': { borderColor: '#B8893A' },
+                        '& fieldset': {borderColor: '#E0CFA4'},
+                        '&:hover fieldset': {borderColor: '#B8893A'},
+                        '&.Mui-focused fieldset': {borderColor: '#B8893A'},
                     },
                 },
             },
@@ -161,15 +161,15 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     backgroundColor: '#FEFCF5',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#E0CFA4' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B8893A' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#B8893A' },
+                    '& .MuiOutlinedInput-notchedOutline': {borderColor: '#E0CFA4'},
+                    '&:hover .MuiOutlinedInput-notchedOutline': {borderColor: '#B8893A'},
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {borderColor: '#B8893A'},
                 },
             },
         },
         MuiRadio: {
             styleOverrides: {
-                root: { color: '#C8AE78', '&.Mui-checked': { color: '#2A6B68' } },
+                root: {color: '#C8AE78', '&.Mui-checked': {color: '#2A6B68'}},
             },
         },
     },
@@ -236,14 +236,14 @@ const CustomToolbar = () => {
             background: 'linear-gradient(90deg, #1C1A14 0%, #2C2616 100%)',
             borderBottom: '2px solid #B8893A',
         }}>
-            <Toolbar sx={{ minHeight: 56, gap: 1 }}>
+            <Toolbar sx={{minHeight: 56, gap: 1}}>
                 <IconButton onClick={handleMenuOpen} sx={{
                     mr: 1,
                     color: '#E0CFA4',
                     border: '1px solid rgba(184,137,58,0.3)',
                     borderRadius: 2,
                     p: '6px',
-                    '&:hover': { backgroundColor: 'rgba(184,137,58,0.12)', borderColor: '#B8893A' },
+                    '&:hover': {backgroundColor: 'rgba(184,137,58,0.12)', borderColor: '#B8893A'},
                 }}>
                     <MdMenu size={18}/>
                 </IconButton>

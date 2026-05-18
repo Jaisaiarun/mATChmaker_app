@@ -2,11 +2,25 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {toast} from 'react-toastify';
 import {
-    Box, Button, Checkbox, Chip, Collapse, Divider,
-    FormControlLabel, FormGroup, IconButton, Paper,
-    Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TableSortLabel,
-    Tooltip, Typography,
+    Box,
+    Button,
+    Checkbox,
+    Chip,
+    Collapse,
+    Divider,
+    FormControlLabel,
+    FormGroup,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel,
+    Tooltip,
+    Typography,
 } from '@mui/material';
 import {FaCopy, FaDownload, FaFilter} from 'react-icons/fa';
 import {FaFileCsv} from 'react-icons/fa6';
@@ -21,7 +35,7 @@ const FEATURE_TYPES = ['XUT', 'XU'];
 
 const TYPE_META = {
     XUT: {label: 'XUT_mATChmaker', color: 'secondary', accent: '#4F8F8B'},
-    XU:  {label: 'XU_mATChmaker',  color: 'primary',   accent: '#C9A24D'},
+    XU: {label: 'XU_mATChmaker', color: 'primary', accent: '#C9A24D'},
 };
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -35,7 +49,7 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
     const meta = TYPE_META[featureType];
 
     // ── sort ──────────────────────────────────────────────────────────────────
-    const [sortField,     setSortField]     = useState('module_position');
+    const [sortField, setSortField] = useState('module_position');
     const [sortDirection, setSortDirection] = useState('asc');
 
     const handleSort = (field) => {
@@ -49,18 +63,18 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
 
     // ── filters ───────────────────────────────────────────────────────────────
     const [showRecordFilter, setShowRecordFilter] = useState(false);
-    const [showLabelFilter,  setShowLabelFilter]  = useState(false);
-    const [expandedSeqs,     setExpandedSeqs]     = useState(new Set());
-    const [collapsed,        setCollapsed]        = useState(false);
+    const [showLabelFilter, setShowLabelFilter] = useState(false);
+    const [expandedSeqs, setExpandedSeqs] = useState(new Set());
+    const [collapsed, setCollapsed] = useState(false);
 
     const uniqueRecords = useMemo(() => [...new Set(rows.map(r => r.record))].sort(), [rows]);
-    const uniqueLabels  = useMemo(() => [...new Set(rows.map(r => r.label))].sort(),  [rows]);
+    const uniqueLabels = useMemo(() => [...new Set(rows.map(r => r.label))].sort(), [rows]);
 
     const [selectedRecords, setSelectedRecords] = useState(new Set());
-    const [selectedLabels,  setSelectedLabels]  = useState(new Set());
+    const [selectedLabels, setSelectedLabels] = useState(new Set());
 
     useEffect(() => setSelectedRecords(new Set(uniqueRecords)), [uniqueRecords.join(',')]); // eslint-disable-line
-    useEffect(() => setSelectedLabels(new Set(uniqueLabels)),   [uniqueLabels.join(',')]);  // eslint-disable-line
+    useEffect(() => setSelectedLabels(new Set(uniqueLabels)), [uniqueLabels.join(',')]);  // eslint-disable-line
 
     // ── filtered + sorted ─────────────────────────────────────────────────────
     const displayed = useMemo(() => {
@@ -90,8 +104,8 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
             .join('\n');
         const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        const a   = document.createElement('a');
-        a.href     = url;
+        const a = document.createElement('a');
+        a.href = url;
         a.download = `${featureType.toLowerCase()}_results.csv`;
         a.click();
         URL.revokeObjectURL(url);
@@ -165,34 +179,34 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
                                     <Paper sx={{p: 1.5, mt: 1}} variant="outlined">
                                         <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedRecords(new Set(uniqueRecords))}>
+                                                    onClick={() => setSelectedRecords(new Set(uniqueRecords))}>
                                                 Select all
                                             </Button>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedRecords(new Set())}>
+                                                    onClick={() => setSelectedRecords(new Set())}>
                                                 Clear all
                                             </Button>
                                         </Box>
                                         <FormGroup row sx={{gap: 0.5}}>
                                             {uniqueRecords.map(rec => (
                                                 <FormControlLabel key={rec}
-                                                    control={
-                                                        <Checkbox size="small"
-                                                            checked={selectedRecords.has(rec)}
-                                                            onChange={() => setSelectedRecords(prev => {
-                                                                const n = new Set(prev);
-                                                                n.has(rec) ? n.delete(rec) : n.add(rec);
-                                                                return n;
-                                                            })}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <Chip label={rec} size="small"
-                                                            variant={selectedRecords.has(rec) ? 'filled' : 'outlined'}
-                                                            color={selectedRecords.has(rec) ? meta.color : 'default'}
-                                                            sx={{fontFamily: 'monospace', fontSize: 11}}
-                                                        />
-                                                    }
+                                                                  control={
+                                                                      <Checkbox size="small"
+                                                                                checked={selectedRecords.has(rec)}
+                                                                                onChange={() => setSelectedRecords(prev => {
+                                                                                    const n = new Set(prev);
+                                                                                    n.has(rec) ? n.delete(rec) : n.add(rec);
+                                                                                    return n;
+                                                                                })}
+                                                                      />
+                                                                  }
+                                                                  label={
+                                                                      <Chip label={rec} size="small"
+                                                                            variant={selectedRecords.has(rec) ? 'filled' : 'outlined'}
+                                                                            color={selectedRecords.has(rec) ? meta.color : 'default'}
+                                                                            sx={{fontFamily: 'monospace', fontSize: 11}}
+                                                                      />
+                                                                  }
                                                 />
                                             ))}
                                         </FormGroup>
@@ -214,33 +228,33 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
                                     <Paper sx={{p: 1.5, mt: 1}} variant="outlined">
                                         <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedLabels(new Set(uniqueLabels))}>
+                                                    onClick={() => setSelectedLabels(new Set(uniqueLabels))}>
                                                 Select all
                                             </Button>
                                             <Button size="small" variant="text"
-                                                onClick={() => setSelectedLabels(new Set())}>
+                                                    onClick={() => setSelectedLabels(new Set())}>
                                                 Clear all
                                             </Button>
                                         </Box>
                                         <FormGroup row sx={{gap: 0.5}}>
                                             {uniqueLabels.map(lbl => (
                                                 <FormControlLabel key={lbl}
-                                                    control={
-                                                        <Checkbox size="small"
-                                                            checked={selectedLabels.has(lbl)}
-                                                            onChange={() => setSelectedLabels(prev => {
-                                                                const n = new Set(prev);
-                                                                n.has(lbl) ? n.delete(lbl) : n.add(lbl);
-                                                                return n;
-                                                            })}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <Chip label={lbl} size="small"
-                                                            variant={selectedLabels.has(lbl) ? 'filled' : 'outlined'}
-                                                            color={selectedLabels.has(lbl) ? 'default' : 'default'}
-                                                        />
-                                                    }
+                                                                  control={
+                                                                      <Checkbox size="small"
+                                                                                checked={selectedLabels.has(lbl)}
+                                                                                onChange={() => setSelectedLabels(prev => {
+                                                                                    const n = new Set(prev);
+                                                                                    n.has(lbl) ? n.delete(lbl) : n.add(lbl);
+                                                                                    return n;
+                                                                                })}
+                                                                      />
+                                                                  }
+                                                                  label={
+                                                                      <Chip label={lbl} size="small"
+                                                                            variant={selectedLabels.has(lbl) ? 'filled' : 'outlined'}
+                                                                            color={selectedLabels.has(lbl) ? 'default' : 'default'}
+                                                                      />
+                                                                  }
                                                 />
                                             ))}
                                         </FormGroup>
@@ -272,7 +286,7 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
 
                             <TableBody>
                                 {displayed.map((r, idx) => {
-                                    const seqKey  = `${featureType}-${idx}`;
+                                    const seqKey = `${featureType}-${idx}`;
                                     const expanded = expandedSeqs.has(seqKey);
 
                                     return (
@@ -353,7 +367,7 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
                                 {displayed.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={7} align="center"
-                                            sx={{py: 4, color: 'text.disabled', fontStyle: 'italic'}}>
+                                                   sx={{py: 4, color: 'text.disabled', fontStyle: 'italic'}}>
                                             No results match the current filters.
                                         </TableCell>
                                     </TableRow>
@@ -375,10 +389,10 @@ const FeatureTable = ({featureType, rows, jobId, annotatedFile}) => {
 
 const ResultsXuXut = () => {
     const {jobId} = useParams();
-    const [results,       setResults]       = useState(null);
-    const [isLoading,     setIsLoading]     = useState(true);
+    const [results, setResults] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [annotatedFile, setAnnotatedFile] = useState(null);
-    const [progress,      setProgress]      = useState(null);
+    const [progress, setProgress] = useState(null);
 
     // ── poll ──────────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -392,7 +406,7 @@ const ResultsXuXut = () => {
                 if (data.status === 'success') {
                     const payload = data.payload || {};
                     if (payload.annotated_file) setAnnotatedFile(payload.annotated_file);
-                    if (payload.progress)       setProgress(payload.progress);
+                    if (payload.progress) setProgress(payload.progress);
                     setResults(payload.results || []);
                     setIsLoading(false);
                     clearInterval(intervalId);
@@ -430,7 +444,9 @@ const ResultsXuXut = () => {
     const rowsByType = useMemo(() => {
         if (!results) return {};
         const map = {};
-        FEATURE_TYPES.forEach(t => { map[t] = results.filter(r => r.type === t); });
+        FEATURE_TYPES.forEach(t => {
+            map[t] = results.filter(r => r.type === t);
+        });
         return map;
     }, [results]);
 
@@ -438,7 +454,7 @@ const ResultsXuXut = () => {
     const stats = useMemo(() => {
         if (!results) return null;
         const totalFragments = results.length;
-        const uniqueRecords  = new Set(results.map(r => r.record)).size;
+        const uniqueRecords = new Set(results.map(r => r.record)).size;
         const avgLen = results.length
             ? Math.round(results.reduce((s, r) => s + r.length, 0) / results.length)
             : 0;
@@ -456,8 +472,10 @@ const ResultsXuXut = () => {
             .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
             .join('\n');
         const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        const a   = document.createElement('a');
-        a.href = url; a.download = 'xu_xut_results.csv'; a.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'xu_xut_results.csv';
+        a.click();
         URL.revokeObjectURL(url);
     };
 
@@ -467,8 +485,10 @@ const ResultsXuXut = () => {
             {type: 'application/json'}
         );
         const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href = url; a.download = 'xu_xut_results.json'; a.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'xu_xut_results.json';
+        a.click();
         URL.revokeObjectURL(url);
     };
 
@@ -481,9 +501,9 @@ const ResultsXuXut = () => {
         const loadingMessage = (() => {
             if (!progress) return 'Starting...';
             const phase = progress.phase;
-            if (phase === 'parsing')    return 'Parsing GenBank file...';
+            if (phase === 'parsing') return 'Parsing GenBank file...';
             if (phase === 'annotating') return `Annotating ${progress.message || ''}...`;
-            if (phase === 'saving')     return 'Writing annotated GenBank file...';
+            if (phase === 'saving') return 'Writing annotated GenBank file...';
             return 'Processing...';
         })();
 
@@ -569,10 +589,10 @@ const ResultsXuXut = () => {
                     }}>
                         {[
                             ['Total fragments', stats.totalFragments],
-                            ['Records',         stats.uniqueRecords],
+                            ['Records', stats.uniqueRecords],
                             ['Avg length (aa)', stats.avgLen],
-                            ['XUT fragments',   rowsByType.XUT?.length ?? 0],
-                            ['XU fragments',    rowsByType.XU?.length  ?? 0],
+                            ['XUT fragments', rowsByType.XUT?.length ?? 0],
+                            ['XU fragments', rowsByType.XU?.length ?? 0],
                         ].map(([label, value]) => (
                             <Box key={label} sx={{
                                 textAlign: 'center',

@@ -1,14 +1,15 @@
-import threading, logging, errno
+import errno
+import logging
+import threading
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Any
 
-
 try:
     import psutil
+
     _proc = psutil.Process()
 except Exception:  # psutil optional
-    _proc = None 
-
+    _proc = None
 
 # Prefer joblig for large sklearn models (supports mmap arrays)
 try:
@@ -35,8 +36,8 @@ class MultiModelLoader:
         """Return the resident set size (RSS) memory usage of the process."""
         if not _proc:
             return "n/a"
-        return f"{_proc.memory_info().rss/1024/1024:.1f} MB"
-    
+        return f"{_proc.memory_info().rss / 1024 / 1024:.1f} MB"
+
     def _default_load(self, path: str, mmap: bool) -> Any:
         # Try joblib with mmap first
         if joblib_load:
@@ -53,7 +54,7 @@ class MultiModelLoader:
         import pickle
         with open(path, "rb") as fh:
             return pickle.load(fh)
-        
+
     def get(self, key: str):
         if key in self._models:
             return self._models[key]

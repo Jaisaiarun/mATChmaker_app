@@ -1,10 +1,10 @@
 import React from 'react';
-import { Box, Divider, FormControlLabel, Switch, Typography, Input, Checkbox, Modal, IconButton } from '@mui/material';
-import { MdClose } from 'react-icons/md';
+import {Box, Checkbox, Divider, FormControlLabel, IconButton, Input, Modal, Switch, Typography} from '@mui/material';
+import {MdClose} from 'react-icons/md';
 
 /**
  * Component to display the settings modal.
- * 
+ *
  * @param {Object} props - The props of the component.
  * @param {boolean} props.openSettingsModal - The state of the settings modal.
  * @param {Function} props.handleCloseSettingsModal - The function to close the settings modal.
@@ -18,23 +18,23 @@ import { MdClose } from 'react-icons/md';
  * @returns {React.ReactElement} - The settings modal component.
  */
 const SettingsModal = ({
-    // modal state
-    openSettingsModal,
-    handleCloseSettingsModal,
+                           // modal state
+                           openSettingsModal,
+                           handleCloseSettingsModal,
 
-    // selected model determines which options are available
-    selectedModel,
+                           // selected model determines which options are available
+                           selectedModel,
 
-    // option states
-    useStructureGuidedAlignment,
-    setUseStructureGuidedAlignment,
-    smilesFileContent,
-    setSmilesFileContent,
-    useOnlyUploadedSubstrates,
-    setUseOnlyUploadedSubstrates,
-    uploadedSubstratesFileContentHasHeader,
-    setUploadedSubstratesFileContentHasHeader,
-}) => {
+                           // option states
+                           useStructureGuidedAlignment,
+                           setUseStructureGuidedAlignment,
+                           smilesFileContent,
+                           setSmilesFileContent,
+                           useOnlyUploadedSubstrates,
+                           setUseOnlyUploadedSubstrates,
+                           uploadedSubstratesFileContentHasHeader,
+                           setUploadedSubstratesFileContentHasHeader,
+                       }) => {
 
     // handle SMILES file upload for PARASECT
     const handleSmilesFileUpload = async (e) => {
@@ -70,20 +70,20 @@ const SettingsModal = ({
                         padding: 1,
                     }}
                 >
-                    <Typography 
-                        variant='h5' 
+                    <Typography
+                        variant='h5'
                         gutterBottom
-                        sx={{ 
-                            color: 'black.main', 
+                        sx={{
+                            color: 'black.main',
                             textAlign: 'center',
                             pl: 2,
-                            pt: 2, 
+                            pt: 2,
                         }}
                     >
                         Settings
                     </Typography>
                     <IconButton onClick={handleCloseSettingsModal}>
-                        <MdClose size={24} />
+                        <MdClose size={24}/>
                     </IconButton>
                 </Box>
 
@@ -99,10 +99,10 @@ const SettingsModal = ({
                 >
                     <Box>
                         <Typography variant='body1' gutterBottom>
-                            Structure-guided profile alignment uses MUSCLE v3.8.1551 to 
+                            Structure-guided profile alignment uses MUSCLE v3.8.1551 to
                             align the query sequence to a profile generated from the
                             structure of the query sequence. This can improve the accuracy
-                            of the prediction, but may take longer to run. 
+                            of the prediction, but may take longer to run.
                         </Typography>
 
                         {/* structure-guided alignment switch */}
@@ -117,20 +117,20 @@ const SettingsModal = ({
                         />
                     </Box>
 
-                    <Divider />
-                    
+                    <Divider/>
+
                     <Box>
                         <Typography variant='body1' gutterBottom>
                             PARASECT predicts if a given substrate has an interaction
-                            with the adenylation domain. There is a standard list of 
+                            with the adenylation domain. There is a standard list of
                             of substrates that PARASECT uses, but you can also upload
                             a custom list of substrates in TSV format.
                         </Typography>
 
                         {/* SMILES file upload for PARASECT */}
                         <Box width='100%' margin='normal'>
-                            <Typography 
-                                variant='body1' 
+                            <Typography
+                                variant='body1'
                                 gutterBottom
                                 style={{
                                     color: (selectedModel !== 'parasect' || selectedModel !== 'parasectBacterial')
@@ -142,12 +142,12 @@ const SettingsModal = ({
                             </Typography>
                             <Input
                                 type='file'
-                                inputProps={{ accept: '.tsv' }}
+                                inputProps={{accept: '.tsv'}}
                                 onChange={handleSmilesFileUpload}
                                 disabled={!(selectedModel === 'parasect' || selectedModel === 'parasectBacterial')}
                             />
                         </Box>
-                        
+
                         <Box
                             sx={{
                                 display: 'flex',
@@ -170,7 +170,7 @@ const SettingsModal = ({
 
                             {/* option to specify if the uploaded substrates file has a header */}
                             <Box
-                            // as row
+                                // as row
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'left',

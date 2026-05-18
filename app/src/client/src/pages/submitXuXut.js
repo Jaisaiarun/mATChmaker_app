@@ -1,20 +1,20 @@
 import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {toast} from 'react-toastify';
-import {
-    Box, Button, CircularProgress, Divider,
-    Input, TextField, Typography,
-} from '@mui/material';
+import {Box, Button, CircularProgress, Divider, Input, TextField, Typography,} from '@mui/material';
 
 const SubmitXuXut = () => {
-    const [gbkFile, setGbkFile]     = useState(null);
+    const [gbkFile, setGbkFile] = useState(null);
     const [createdBy, setCreatedBy] = useState('mATChmaker');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (!file) { setGbkFile(null); return; }
+        if (!file) {
+            setGbkFile(null);
+            return;
+        }
         const name = file.name.toLowerCase();
         if (!name.endsWith('.gb') && !name.endsWith('.gbk')) {
             toast.error('Only .gb or .gbk files are allowed.');
@@ -27,7 +27,10 @@ const SubmitXuXut = () => {
 
     const handleSubmit = async () => {
         if (isLoading) return;
-        if (!gbkFile) { toast.error('Please upload a GenBank file.'); return; }
+        if (!gbkFile) {
+            toast.error('Please upload a GenBank file.');
+            return;
+        }
 
         setIsLoading(true);
         try {
@@ -37,7 +40,10 @@ const SubmitXuXut = () => {
 
             const resp = await fetch('/api/submit_xu_xut', {method: 'POST', body: formData});
             let json = null;
-            try { json = await resp.json(); } catch (_) {}
+            try {
+                json = await resp.json();
+            } catch (_) {
+            }
 
             if (resp.ok && json?.status === 'success' && json?.payload?.jobId) {
                 navigate(`/results/xu_xut/${json.payload.jobId}`);

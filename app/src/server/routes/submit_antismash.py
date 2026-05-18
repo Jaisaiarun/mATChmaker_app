@@ -18,10 +18,9 @@ import subprocess
 import threading
 import time
 import uuid
-from pathlib import Path
-
 from Bio import SeqIO
 from flask import Blueprint, request
+from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
@@ -95,16 +94,16 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
 
     try:
         antismash_exe = _find_antismash()
-        gbk_path      = Path(input_path)
+        gbk_path = Path(input_path)
         original_stem = re.sub(r'^[a-f0-9\-]+_[AB]\d*_', '', gbk_path.stem)
 
         os.makedirs(str(output_dir), exist_ok=True)
 
         app.config["JOB_RESULTS"][job_id]["progress"] = {
-            "phase":   "running",
+            "phase": "running",
             "message": "Running antiSMASH (this may take several minutes)...",
             "current": 0,
-            "total":   0,
+            "total": 0,
         }
 
         db_dir = os.environ.get("ANTISMASH_DB_DIR", "")
@@ -112,11 +111,11 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
         cmd = [
             antismash_exe,
             str(gbk_path),
-            "--output-dir",       str(output_dir),
-            "--genefinding-tool", "none",       # keep existing gene annotations
-            "--pfam2go",                         # PFAM domain annotation
-            "--cpus",             "4",
-            "--logfile",          str(output_dir / "antismash.log"),
+            "--output-dir", str(output_dir),
+            "--genefinding-tool", "none",  # keep existing gene annotations
+            "--pfam2go",  # PFAM domain annotation
+            "--cpus", "4",
+            "--logfile", str(output_dir / "antismash.log"),
         ]
 
         # add database dir only when explicitly set (not needed if installed default)
@@ -129,7 +128,7 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
             cmd,
             capture_output=True,
             text=True,
-            timeout=1800,        # 30 min hard limit
+            timeout=1800,  # 30 min hard limit
         )
 
         if proc.returncode != 0:
@@ -140,43 +139,48 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
             )
 
         app.config["JOB_RESULTS"][job_id]["progress"] = {
-            "phase":   "merging",
+            "phase": "merging",
             "message": "Merging antiSMASH output files...",
             "current": 0,
-            "total":   0,
+            "total": 0,
         }
 
         merged_path, gb_file_paths = _merge_antismash_output(output_dir, original_stem)
 
         # Build a summary: count feature types in the merged output
         summary = {
-            "total_records":  0,
-            "protoclusters":  0,
-            "as_modules":     0,
-            "as_domains":     0,
-            "pfam_domains":   0,
-            "cds_features":   0,
+            "total_records": 0,
+            "protoclusters": 0,
+            "as_modules": 0,
+            "as_domains": 0,
+            "pfam_domains": 0,
+            "cds_features": 0,
         }
         for rec in SeqIO.parse(str(merged_path), "genbank"):
             summary["total_records"] += 1
             for feat in rec.features:
-                if feat.type == "protocluster":  summary["protoclusters"] += 1
-                elif feat.type == "aSModule":    summary["as_modules"]    += 1
-                elif feat.type == "aSDomain":    summary["as_domains"]    += 1
-                elif feat.type == "PFAM_domain": summary["pfam_domains"]  += 1
-                elif feat.type == "CDS":         summary["cds_features"]  += 1
+                if feat.type == "protocluster":
+                    summary["protoclusters"] += 1
+                elif feat.type == "aSModule":
+                    summary["as_modules"] += 1
+                elif feat.type == "aSDomain":
+                    summary["as_domains"] += 1
+                elif feat.type == "PFAM_domain":
+                    summary["pfam_domains"] += 1
+                elif feat.type == "CDS":
+                    summary["cds_features"] += 1
 
-        app.config["JOB_RESULTS"][job_id]["status"]         = str(Status.Success).lower()
-        app.config["JOB_RESULTS"][job_id]["message"]         = "antiSMASH annotation complete"
-        app.config["JOB_RESULTS"][job_id]["results"]         = [summary]
-        app.config["JOB_RESULTS"][job_id]["annotated_file"]  = merged_path.name
-        app.config["JOB_RESULTS"][job_id]["gb_file_paths"]   = gb_file_paths
+        app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Success).lower()
+        app.config["JOB_RESULTS"][job_id]["message"] = "antiSMASH annotation complete"
+        app.config["JOB_RESULTS"][job_id]["results"] = [summary]
+        app.config["JOB_RESULTS"][job_id]["annotated_file"] = merged_path.name
+        app.config["JOB_RESULTS"][job_id]["gb_file_paths"] = gb_file_paths
 
     except Exception as e:
         app.logger.error("run_antismash_annotation error for job %s: %s", job_id, e)
-        app.config["JOB_RESULTS"][job_id]["status"]  = str(Status.Failure).lower()
-        app.config["JOB_RESULTS"][job_id]["message"]  = str(e)
-        app.config["JOB_RESULTS"][job_id]["results"]  = []
+        app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Failure).lower()
+        app.config["JOB_RESULTS"][job_id]["message"] = str(e)
+        app.config["JOB_RESULTS"][job_id]["results"] = []
 
     finally:
         try:
@@ -202,27 +206,27 @@ def submit_antismash():
     if not f.filename or not f.filename.lower().endswith((".gb", ".gbk")):
         return ResponseData(Status.Failure, message="Only .gb or .gbk files allowed.").to_dict()
 
-    job_id    = str(uuid.uuid4())
+    job_id = str(uuid.uuid4())
     timestamp = int(time.time())
 
     os.makedirs(TEMP_DIR, exist_ok=True)
-    safe_name  = secure_filename(f.filename)
+    safe_name = secure_filename(f.filename)
     input_path = os.path.join(TEMP_DIR, f"{job_id}_A_{safe_name}")
     f.save(input_path)
 
     app.config["JOB_RESULTS"][job_id] = {
-        "status":         str(Status.Pending).lower(),
-        "message":        "antiSMASH job is pending",
-        "job_type":       "antismash",
-        "results":        [],
-        "timestamp":      timestamp,
-        "gb_file_paths":  {},
+        "status": str(Status.Pending).lower(),
+        "message": "antiSMASH job is pending",
+        "job_type": "antismash",
+        "results": [],
+        "timestamp": timestamp,
+        "gb_file_paths": {},
         "annotated_file": None,
         "progress": {
-            "phase":   "queued",
+            "phase": "queued",
             "message": "Queued...",
             "current": 0,
-            "total":   0,
+            "total": 0,
         },
     }
 

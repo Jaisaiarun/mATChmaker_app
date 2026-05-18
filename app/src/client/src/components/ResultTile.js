@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import { Box, Button, MenuItem, Select, FormControl } from '@mui/material';
-import { FaFingerprint, FaCopy } from 'react-icons/fa';
+import React, {useState} from 'react';
+import {toast} from 'react-toastify';
+import {Box, Button, FormControl, MenuItem, Select} from '@mui/material';
+import {FaCopy, FaFingerprint} from 'react-icons/fa';
 
 import SmileDrawerContainer from './SmilesDrawer';
 
 /**
  * Component to display the results of the prediction.
- * 
+ *
  * @param {Object} props - The component props.
  * @param {Object} props.result - The result object.
  * @returns {React.ReactElement} - The result tile component.
  */
-const ResultTile = ({ result }) => {
+const ResultTile = ({result}) => {
     const [selectedPrediction, setSelectedPrediction] = useState(result['predictions'][0]);
-    
+
     return (
         <Box
             sx={{
@@ -43,23 +43,23 @@ const ResultTile = ({ result }) => {
 
             {/* domain signature, only visualize when length > 0 */}
             {result['domain_signature'].length > 0 &&
-                <Box 
-                    sx={{ 
+                <Box
+                    sx={{
                         padding: 1,
                         display: 'flex',
                         justifyContent: 'center',
                     }}
                 >
-                    <FaFingerprint 
-                        size='1.5em' 
-                        style={{ marginRight: '5px' }}
+                    <FaFingerprint
+                        size='1.5em'
+                        style={{marginRight: '5px'}}
                     />
                     {result['domain_signature']}
                 </Box>
             }
-            
+
             {/* drop down for picking substrate prediction, sorted on prediction value */}
-            <Box sx={{ padding: 1 }}>
+            <Box sx={{padding: 1}}>
                 <FormControl fullWidth>
                     <Select
                         labelId="substrate-select"
@@ -69,7 +69,7 @@ const ResultTile = ({ result }) => {
                             const selectedPrediction = result['predictions'].find(prediction => prediction['substrate_name'] === event.target.value);
                             setSelectedPrediction(selectedPrediction);
                         }}
-                        sx={{ borderRadius: '0' }}
+                        sx={{borderRadius: '0'}}
                         MenuProps={{
                             PaperProps: {
                                 style: {
@@ -79,8 +79,8 @@ const ResultTile = ({ result }) => {
                         }}
                     >
                         {result['predictions'].map((substrate, index) => (
-                            <MenuItem 
-                                key={index} 
+                            <MenuItem
+                                key={index}
                                 value={substrate['substrate_name']}
                             >
                                 {index + 1}. {substrate['substrate_name']} ({substrate['probability']})
@@ -99,14 +99,14 @@ const ResultTile = ({ result }) => {
                     padding: 1,
                 }}
             >
-                <SmileDrawerContainer  
+                <SmileDrawerContainer
                     identifier={`${result['domain_name']}-${result['domain_nr']}`}
-                    smilesStr={selectedPrediction['substrate_smiles']} 
+                    smilesStr={selectedPrediction['substrate_smiles']}
                     height={200}
                     width={200}
                 />
             </Box>
-            
+
             { /* copy domain information to clipboard */}
             <Box>
                 <Box
@@ -124,15 +124,15 @@ const ResultTile = ({ result }) => {
                             navigator.clipboard.writeText(result['domain_sequence']);
                             toast.success('Copied the domain amino acid sequence to clipboard!');
                         }}
-                        sx={{ 
-                            flexGrow: 1, 
+                        sx={{
+                            flexGrow: 1,
                             width: '50%',
                             borderRadius: '0',
                             borderBottom: '1px solid white',
                         }}
                         disabled={result['domain_sequence'].length === 0}
                     >
-                        <FaCopy style={{ marginRight: '5px', fill: 'white' }} />
+                        <FaCopy style={{marginRight: '5px', fill: 'white'}}/>
                         Sequence
                     </Button>
                     <Button
@@ -142,15 +142,15 @@ const ResultTile = ({ result }) => {
                             navigator.clipboard.writeText(result['domain_signature']);
                             toast.success('Copied the domain signature to clipboard!');
                         }}
-                        sx={{ 
-                            flexGrow: 1, 
-                            width: '50%', 
+                        sx={{
+                            flexGrow: 1,
+                            width: '50%',
                             borderRadius: '0',
                             borderBottom: '1px solid white',
                         }}
                         disabled={result['domain_signature'].length === 0}
                     >
-                        <FaCopy style={{ marginRight: '5px', fill: 'white' }} />
+                        <FaCopy style={{marginRight: '5px', fill: 'white'}}/>
                         Signature
                     </Button>
                 </Box>
@@ -169,15 +169,15 @@ const ResultTile = ({ result }) => {
                             navigator.clipboard.writeText(selectedPrediction['substrate_smiles']);
                             toast.success('Copied the substrate SMILES to clipboard!');
                         }}
-                        sx={{ 
-                            flexGrow: 1, 
-                            width: '50%', 
+                        sx={{
+                            flexGrow: 1,
+                            width: '50%',
                             borderRadius: '0',
                             borderBottomLeftRadius: '10px',
                         }}
                         disabled={selectedPrediction['substrate_smiles'].length === 0}
                     >
-                        <FaCopy style={{ marginRight: '5px', fill: 'white' }} />
+                        <FaCopy style={{marginRight: '5px', fill: 'white'}}/>
                         SMILES
                     </Button>
                     <Button
@@ -187,15 +187,15 @@ const ResultTile = ({ result }) => {
                             navigator.clipboard.writeText(result['domain_extended_signature']);
                             toast.success('Copied the domain extended signature to clipboard!');
                         }}
-                        sx={{ 
-                            flexGrow: 1, 
+                        sx={{
+                            flexGrow: 1,
                             width: '50%',
                             borderRadius: '0',
                             borderBottomRightRadius: '10px',
                         }}
                         disabled={result['domain_extended_signature'].length === 0}
                     >
-                        <FaCopy style={{ marginRight: '5px', fill: 'white' }} />
+                        <FaCopy style={{marginRight: '5px', fill: 'white'}}/>
                         Ext. signature
                     </Button>
                 </Box>

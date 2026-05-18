@@ -5,14 +5,13 @@ Routes for annotating genbank files with paras prediction.
 """
 
 import os
+import re
 import threading
 import time
 import uuid
-from pathlib import Path
-import re
-
 from Bio import SeqIO
 from flask import Blueprint, request
+from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
@@ -93,8 +92,8 @@ def run_paras_annotation(job_id: str, input_path: str, model_key: str) -> None:
         for rec_idx, record in enumerate(records):
             for feat_idx, feat in enumerate(record.features):
                 if (
-                    feat.type == "aSDomain"
-                    and feat.qualifiers.get("aSDomain", [""])[0] == "AMP-binding"
+                        feat.type == "aSDomain"
+                        and feat.qualifiers.get("aSDomain", [""])[0] == "AMP-binding"
                 ):
                     amp_domains.append((rec_idx, feat_idx))
 

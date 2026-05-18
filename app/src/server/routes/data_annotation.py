@@ -2,24 +2,21 @@
 
 """Routes for making adenylation domain subtrate specificity predictions on raw input."""
 
+import joblib
 import os
 import threading
 import time
 import uuid
-from typing import Dict
-
-import joblib
 from flask import Blueprint, Response, request, jsonify
+from typing import Dict
 
 from parasect.api import run_paras, sort_results, AnnotationResult
 from parasect.database.query_database import get_domains_from_sequence, get_domains_from_synonym
-
 from .app import app
 from .common import ResponseData, Status
 from .constants import TEMP_DIR
 from .database import get_db
 from .submit import loader
-
 
 blueprint_annotate_data = Blueprint("annotate_data", __name__)
 
@@ -156,4 +153,3 @@ def annotate_data() -> Response:
 
     # immediately return job_id
     return jsonify(ResponseData(Status.Success, payload={"jobId": job_id}).to_dict())
-

@@ -1,9 +1,9 @@
 {
-    "short_name": "mATChmaker",
-    "name": "mATChmaker",
-    "icons": [],
-    "start_url": ".",
-    "display": "standalone",
-    "theme_color": "#000000",
-    "background_color": "#ffffff"
+  "short_name": "mATChmaker",
+  "name": "mATChmaker",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
 }

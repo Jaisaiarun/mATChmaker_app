@@ -1,11 +1,21 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { Box, IconButton, Divider, Typography, Button, Modal, Tooltip, TextField, Stack, Chip, CircularProgress } from '@mui/material';
-import { CheckCircle, ErrorOutline } from "@mui/icons-material";
-import { MdClose } from 'react-icons/md';
-
-import { useNavigate } from "react-router-dom";
+import React, {useEffect, useMemo, useState} from 'react';
+import {useNavigate, useParams} from 'react-router-dom';
+import {toast} from 'react-toastify';
+import {
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    IconButton,
+    Modal,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography
+} from '@mui/material';
+import {CheckCircle, ErrorOutline} from "@mui/icons-material";
+import {MdClose} from 'react-icons/md';
 
 import Loading from '../components/Loading';
 import ProteinTile from '../components/ProteinTile';
@@ -16,7 +26,7 @@ import Turnstile from 'react-turnstile';
 const SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
 
 
-function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
+function SubmitAnnotationsModal({open, onClose, proteinAnnotations}) {
     const navigate = useNavigate();
     const [captchaToken, setCaptchaToken] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -61,7 +71,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
 
     const formatOrcidPretty = (digits16) => {
         // returns 0000-0000-0000-0000
-        return `${digits16.slice(0,4)}-${digits16.slice(4,8)}-${digits16.slice(8,12)}-${digits16.slice(12,16)}`;
+        return `${digits16.slice(0, 4)}-${digits16.slice(4, 8)}-${digits16.slice(8, 12)}-${digits16.slice(12, 16)}`;
     };
 
     // ISO 7064 mod 11-2 checksum for ORCID (last char may be 'X' which means 10)
@@ -110,13 +120,13 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         // DOI regex (from Crossref guide)
         const doiRegex = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i;
         if (doiRegex.test(stripped)) {
-            return { type: "doi", id: stripped };
+            return {type: "doi", id: stripped};
         }
 
         // PMID (digits only, typical up to 8-9 digits)
         const pmidRegex = /^\d{1,9}$/;
         if (pmidRegex.test(stripped)) {
-            return { type: "pmid", id: stripped };
+            return {type: "pmid", id: stripped};
         }
 
         return null;
@@ -169,17 +179,17 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
     };
 
     const markRef = (key, patch) => {
-        setReferences((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+        setReferences((prev) => prev.map((r) => (r.key === key ? {...r, ...patch} : r)));
     };
 
     // Crossref for DOI
     const validateViaCrossref = async (doi) => {
         const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
-        const res = await fetch(url, { headers: { Accept: "application/json" } });
+        const res = await fetch(url, {headers: {Accept: "application/json"}});
         if (!res.ok) throw new Error(`Crossref ${res.status}`);
         const json = await res.json();
         const msg = json?.message;
-        if (!msg) return { valid: false };
+        if (!msg) return {valid: false};
 
         const type = msg.type; // 'journal-article', 'posted-content' (preprint), etc.
         const issued = msg.issued; // date parts if available
@@ -189,7 +199,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         const title = (Array.isArray(msg.title) && msg.title[0]) || doi;
         const urlOut = msg.URL || `https://doi.org/${doi}`;
 
-        return { valid: Boolean(isPublished), title, url: urlOut };
+        return {valid: Boolean(isPublished), title, url: urlOut};
     };
 
     // PubMed E-utilities for PMID
@@ -201,7 +211,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         if (!res.ok) throw new Error(`NCBI ${res.status}`);
         const json = await res.json();
         const rec = json?.result?.[pmid];
-        if (!rec) return { valid: false };
+        if (!rec) return {valid: false};
 
         const title = rec.title || `PMID:${pmid}`;
         // consider "published" if has a pubdate and is not preprint. PubMed labels preprints differently
@@ -211,19 +221,19 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         const valid = hasDate && !isPreprint;
 
         const urlOut = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
-        return { valid, title, url: urlOut };
+        return {valid, title, url: urlOut};
     };
 
     const validateReference = async (ref) => {
         try {
             if (ref.type === "doi") {
-                const { valid, title, url } = await validateViaCrossref(ref.id);
-                markRef(ref.key, { status: valid ? "valid" : "invalid", title, url });
+                const {valid, title, url} = await validateViaCrossref(ref.id);
+                markRef(ref.key, {status: valid ? "valid" : "invalid", title, url});
             } else if (ref.type === "pmid") {
-                const { valid, title, url } = await validateViaPubMed(ref.id);
-                markRef(ref.key, { status: valid ? "valid" : "invalid", title, url });
+                const {valid, title, url} = await validateViaPubMed(ref.id);
+                markRef(ref.key, {status: valid ? "valid" : "invalid", title, url});
             } else {
-                markRef(ref.key, { status: "invalid" });
+                markRef(ref.key, {status: "invalid"});
             }
         } catch (e) {
             // Fallback to backend if CORS/network fails
@@ -231,29 +241,29 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
             try {
                 const res = await fetch("/api/validate_reference", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: ref.type, id: ref.id }),
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({type: ref.type, id: ref.id}),
                 });
                 if (res.ok) {
                     const j = await res.json();
-                    const { valid, title, url } = j || {};
-                    markRef(ref.key, { status: valid ? "valid" : "invalid", title, url });
+                    const {valid, title, url} = j || {};
+                    markRef(ref.key, {status: valid ? "valid" : "invalid", title, url});
                 } else {
-                    markRef(ref.key, { status: "error" });
+                    markRef(ref.key, {status: "error"});
                 }
             } catch {
-                markRef(ref.key, { status: "error" });
+                markRef(ref.key, {status: "error"});
             }
         }
     };
-    
+
     const refsPending = references.some((r) => r.status === "pending");
     const refsInvalid = references.some((r) => r.status === "invalid" || r.status === "error");
     const refsValidPayload = useMemo(
         () =>
             references
                 .filter((r) => r.status === "valid")
-                .map(({ type, id, title, url }) => ({ type, id, title, url })),
+                .map(({type, id, title, url}) => ({type, id, title, url})),
         [references]
     );
 
@@ -274,7 +284,8 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         if (Object.keys(proteinAnnotations).length === 0) {
             toast.error("No annotations to submit");
             return;
-        };
+        }
+
 
         if (!captchaToken) return;
 
@@ -293,7 +304,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
         setSubmitting(true);
 
         let prUrl = null;
-    
+
         try {
             const res = await fetch("/api/submit_annotations", {
                 method: "POST",
@@ -325,9 +336,9 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
             toast.success("Annotations submitted successfully");
             onClose?.();
             navigate("/data_annotation");
-        } catch(e) {
+        } catch (e) {
             console.error(e);
-            toast.error(`Error: ${e.message}`, { autoClose: false });
+            toast.error(`Error: ${e.message}`, {autoClose: false});
         } finally {
             setSubmitting(false);
             setCaptchaToken(null);
@@ -356,20 +367,20 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                         padding: 1,
                     }}
                 >
-                    <Typography 
-                        variant='h5' 
+                    <Typography
+                        variant='h5'
                         gutterBottom
-                        sx={{ 
-                            color: 'black.main', 
+                        sx={{
+                            color: 'black.main',
                             textAlign: 'center',
                             pl: 2,
-                            pt: 2, 
+                            pt: 2,
                         }}
                     >
                         Submit annotations
                     </Typography>
                     <IconButton onClick={onClose}>
-                        <MdClose size={24} />
+                        <MdClose size={24}/>
                     </IconButton>
                 </Box>
 
@@ -383,11 +394,11 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                     }}
                 >
                     {/* ORCID field */}
-                    <Box sx={{ width: "100%" }}> 
-                        <Typography variant="subtitle1" sx={{ mb: 1}}>
+                    <Box sx={{width: "100%"}}>
+                        <Typography variant="subtitle1" sx={{mb: 1}}>
                             Contributor ORCID - optional
                         </Typography>
-                        <TextField 
+                        <TextField
                             label="Contributor ORCID"
                             placeholder="e.g., 0000-0002-1825-0097 or https://orcid.org/0000-0002-1825-0097"
                             fullWidth
@@ -399,13 +410,13 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                     </Box>
 
                     {/* References */}
-                    <Box sx={{ width: "100%" }}> 
-                        <Typography variant="subtitle1" sx={{ mb: 1}}>
+                    <Box sx={{width: "100%"}}>
+                        <Typography variant="subtitle1" sx={{mb: 1}}>
                             Related publications (DOI or PubMed ID) - at least one required
                         </Typography>
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <TextField 
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <TextField
                                 fullWidth
                                 label={`Enter DOI or PMID${references.length ? " (you can paste multiple)" : ""}`}
                                 placeholder="10.1038/nature14539, 12345678, https://doi.org/10.1093/nar/gkv123, PMID: 9876543"
@@ -417,24 +428,24 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                                 variant="outlined"
                                 onClick={addReferencesFromInput}
                                 disabled={!refInput.trim() || references.length >= MAX_REFS}
-                                sx={{ whiteSpace: "nowrap", height: '56px' }}
+                                sx={{whiteSpace: "nowrap", height: '56px'}}
                             >
                                 Add
                             </Button>
                         </Box>
 
                         {!!references.length && (
-                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
+                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{mt: 1}}>
                                 {references.map((r) => {
                                     const color =
                                         r.status === "valid" ? "success" : r.status === "pending" ? "default" : "error";
                                     const icon =
                                         r.status === "valid" ? (
-                                            <CheckCircle fontSize="small" />
+                                            <CheckCircle fontSize="small"/>
                                         ) : r.status === "pending" ? (
-                                            <CircularProgress size={14} />
+                                            <CircularProgress size={14}/>
                                         ) : (
-                                            <ErrorOutline fontSize="small" />
+                                            <ErrorOutline fontSize="small"/>
                                         );
                                     const label =
                                         r.type === "doi" ? `DOI:${r.id}` : r.type === "pmid" ? `PMID:${r.id}` : r.id;
@@ -445,13 +456,13 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                                             title={r.title ? `${r.title}${r.url ? `\n${r.url}` : ""}` : ""}
                                             arrow
                                         >
-                                        <Chip
-                                            icon={icon}
-                                            label={label}
-                                            color={color}
-                                            onDelete={() => removeReference(r.key)}
-                                            variant={r.status === "valid" ? "filled" : "outlined"}
-                                        />
+                                            <Chip
+                                                icon={icon}
+                                                label={label}
+                                                color={color}
+                                                onDelete={() => removeReference(r.key)}
+                                                variant={r.status === "valid" ? "filled" : "outlined"}
+                                            />
                                         </Tooltip>
                                     );
                                 })}
@@ -459,12 +470,13 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                         )}
 
                         {refsInvalid && (
-                            <Typography variant="body2" sx={{ mt: 1 }} color="error">
-                                Some references are invalid or not recognized as published articles. Remove or correct them to submit.
+                            <Typography variant="body2" sx={{mt: 1}} color="error">
+                                Some references are invalid or not recognized as published articles. Remove or correct
+                                them to submit.
                             </Typography>
                         )}
                         {refsPending && (
-                            <Typography variant="body2" sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{mt: 1}}>
                                 Validating references…
                             </Typography>
                         )}
@@ -477,7 +489,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                         onVerify={(token) => setCaptchaToken(token)}
                         onExpire={() => setCaptchaToken(null)}
                         onError={() => setCaptchaToken(null)}
-                        options={{ theme: 'auto', appearance: 'always' }}
+                        options={{theme: 'auto', appearance: 'always'}}
                     />
                     <Button
                         variant="contained"
@@ -485,15 +497,15 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
                         onClick={handleSubmit}
                         disabled={!canSubmit}
                     >
-                        {submitting 
-                            ? 'Submitting…' 
+                        {submitting
+                            ? 'Submitting…'
                             : `Submit ${Object.keys(proteinAnnotations).length} annotated protein(s)`}
                     </Button>
                 </Box>
             </Box>
         </Modal>
-    )  
-};
+    )
+}
 
 
 /**
@@ -504,7 +516,7 @@ function SubmitAnnotationsModal({ open, onClose, proteinAnnotations }) {
 
 const AnnotationEditor = () => {
     // get job ID from URL
-    const { jobId } = useParams();
+    const {jobId} = useParams();
 
     // state to store results
     const [results, setResults] = useState(null);
@@ -521,25 +533,26 @@ const AnnotationEditor = () => {
         setOpenAnnotationsSubmissionModal(false);
     };
 
-    {/* For collecting protein annotations */}
+    {/* For collecting protein annotations */
+    }
 
     const handleProteinAnnotationChange = (proteinId, data) => {
-    setProteinAnnotations((prev) => {
-        const updated = { ...prev };
+        setProteinAnnotations((prev) => {
+            const updated = {...prev};
 
-        // Check if domains object exists and has keys
-        const hasDomainAnnotations = data.domains && Object.keys(data.domains).length > 0;
+            // Check if domains object exists and has keys
+            const hasDomainAnnotations = data.domains && Object.keys(data.domains).length > 0;
 
-        if (data && hasDomainAnnotations) {
-            updated[proteinId] = data;
-        } else {
-            // Remove if no domain annotations (ignore synonym)
-            delete updated[proteinId];
-        }
+            if (data && hasDomainAnnotations) {
+                updated[proteinId] = data;
+            } else {
+                // Remove if no domain annotations (ignore synonym)
+                delete updated[proteinId];
+            }
 
-        return updated;
-    });
-};
+            return updated;
+        });
+    };
 
     const OpenAnnotationsSubmissionsModal = () => {
         setOpenAnnotationsSubmissionModal(true);
@@ -571,10 +584,12 @@ const AnnotationEditor = () => {
             } catch (error) {
                 toast.error(
                     <>
-                      {error.message}<br /><br />
-                      If you feel this is an error, or if you need assistance, please contact the developers in GitHub issues by selecting 'Report an issue' in the app bar at the top left of this page and posting your issue or question.
+                        {error.message}<br/><br/>
+                        If you feel this is an error, or if you need assistance, please contact the developers in GitHub
+                        issues by selecting 'Report an issue' in the app bar at the top left of this page and posting
+                        your issue or question.
                     </>,
-                    { autoClose: false }
+                    {autoClose: false}
                 );
                 setIsLoading(false);
                 clearInterval(intervalId);
@@ -638,26 +653,31 @@ const AnnotationEditor = () => {
                     alignItems='left'
                     margin={4}
                 >
-                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+                    <Box sx={{display: 'flex', flexDirection: 'row', gap: 1}}>
                         <Typography variant='h4' gutterBottom>
                             Extracted adenylation domains
                         </Typography>
                     </Box>
-                    <Divider />
+                    <Divider/>
 
-                    <Box sx={{ mt: 4 }}>
+                    <Box sx={{mt: 4}}>
                         <Typography variant='body1' gutterBottom>
-                            In total, {results.length} of the submitted proteins contain adenylation domains. The tiles below show the domains for each protein. You can scroll horizontally to view all proteins.
+                            In total, {results.length} of the submitted proteins contain adenylation domains. The tiles
+                            below show the domains for each protein. You can scroll horizontally to view all proteins.
                         </Typography>
 
                         <Typography variant='body1' gutterBottom>
-                            Domains which already exist in the PARAS/PARASECT dataset are displayed in grey. New domains are displayed in yellow. Please review the new domains and provide annotations where possible. You can proceed with submitting domains once they are annotated.
+                            Domains which already exist in the PARAS/PARASECT dataset are displayed in grey. New domains
+                            are displayed in yellow. Please review the new domains and provide annotations where
+                            possible. You can proceed with submitting domains once they are annotated.
                         </Typography>
 
                         <Typography variant='body1' gutterBottom>
                         </Typography>
-                        <Box sx={{ mt: 4 }}>
-                            <Tooltip title={Object.keys(proteinAnnotations).length === 0 ? "Nothing to submit! Have you annotated all new domains?" : ""} arrow>
+                        <Box sx={{mt: 4}}>
+                            <Tooltip
+                                title={Object.keys(proteinAnnotations).length === 0 ? "Nothing to submit! Have you annotated all new domains?" : ""}
+                                arrow>
                                 {/* Wrap Button in a span to support tooltip for disabled state */}
                                 <span>
                                     <Button
@@ -703,19 +723,19 @@ const AnnotationEditor = () => {
                         <ProteinTile
                             key={index}
                             proteinResult={result}
-                            onUpdateAnnotation={handleProteinAnnotationChange} />
+                            onUpdateAnnotation={handleProteinAnnotationChange}/>
                     ))}
                 </Box>
             </Box>
 
             {/* Dialogue modal */}
-            <SubmitAnnotationsModal 
+            <SubmitAnnotationsModal
                 open={openAnnotationsSubmissionModal}
                 onClose={handleCloseAnnotationsSubmissionModal}
                 proteinAnnotations={proteinAnnotations}
             />
         </>
-        
+
     );
 };
 

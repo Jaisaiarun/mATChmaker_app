@@ -1,19 +1,19 @@
 import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {toast} from 'react-toastify';
-import {
-    Box, Button, CircularProgress, Divider,
-    Input, Typography,
-} from '@mui/material';
+import {Box, Button, CircularProgress, Divider, Input, Typography,} from '@mui/material';
 
 const SubmitAntiSMASH = () => {
-    const [gbkFile, setGbkFile]     = useState(null);
+    const [gbkFile, setGbkFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (!file) { setGbkFile(null); return; }
+        if (!file) {
+            setGbkFile(null);
+            return;
+        }
         const name = file.name.toLowerCase();
         if (!name.endsWith('.gb') && !name.endsWith('.gbk')) {
             toast.error('Only .gb or .gbk files are allowed.');
@@ -26,7 +26,10 @@ const SubmitAntiSMASH = () => {
 
     const handleSubmit = async () => {
         if (isLoading) return;
-        if (!gbkFile) { toast.error('Please upload a GenBank file.'); return; }
+        if (!gbkFile) {
+            toast.error('Please upload a GenBank file.');
+            return;
+        }
 
         setIsLoading(true);
         try {
@@ -35,7 +38,10 @@ const SubmitAntiSMASH = () => {
 
             const resp = await fetch('/api/submit_antismash', {method: 'POST', body: formData});
             let json = null;
-            try { json = await resp.json(); } catch (_) {}
+            try {
+                json = await resp.json();
+            } catch (_) {
+            }
 
             if (resp.ok && json?.status === 'success' && json?.payload?.jobId) {
                 navigate(`/results/${json.payload.jobId}`);

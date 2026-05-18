@@ -1,10 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Box, Typography, Button } from '@mui/material';
+import {Link} from 'react-router-dom';
+import {Box, Button, Typography} from '@mui/material';
 
 /**
  * Component to display a 404 error page.
- * 
+ *
  * @returns {React.ReactElement} - The component showing the 404 error page.
  */
 const NotFound = () => {
@@ -31,11 +31,11 @@ const NotFound = () => {
                     component='img'
                     src='/Logo_trans_1.png'
                     alt='PARAS Error'
-                    sx={{ width: 300 }}
+                    sx={{width: 300}}
                 />
             </Box>
             <Button component={Link} to='/' variant='contained' color='primary'>
-                <Typography sx={{ color: 'white.main' }}>
+                <Typography sx={{color: 'white.main'}}>
                     Go back to the home page
                 </Typography>
             </Button>

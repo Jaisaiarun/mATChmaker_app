@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Box, Link, Tooltip, Typography } from '@mui/material';
+import {Link as RouterLink} from 'react-router-dom';
+import {Box, Link, Tooltip, Typography} from '@mui/material';
 import ExitIcon from '@mui/icons-material/ExitToApp';
 import ScienceIcon from '@mui/icons-material/Science';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -58,8 +58,8 @@ const Home = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                px: { xs: 3, sm: 4 },
-                pt: { xs: 6, sm: 8 },
+                px: {xs: 3, sm: 4},
+                pt: {xs: 6, sm: 8},
                 pb: 8,
             }}
         >
@@ -69,7 +69,7 @@ const Home = () => {
                 src="/mATCmaker_transparent.png"
                 alt="mATChmaker logo"
                 sx={{
-                    width: { xs: 280, sm: 380, md: 440 },
+                    width: {xs: 220, sm: 280, md: 340},
                     height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
@@ -80,7 +80,7 @@ const Home = () => {
             {/* ── Title ── */}
             <Typography sx={{
                 fontFamily: "'DM Serif Display', Georgia, serif",
-                fontSize: { xs: '2rem', sm: '2.6rem' },
+                fontSize: {xs: '2rem', sm: '2.6rem'},
                 letterSpacing: '-0.02em',
                 lineHeight: 1.05,
                 color: '#1C1A14',
@@ -108,7 +108,7 @@ const Home = () => {
                 display: 'flex', alignItems: 'center', gap: 2,
                 width: '100%', maxWidth: 700, mb: 2.5,
             }}>
-                <Box sx={{ flex: 1, height: '1px', background: '#D0BE90' }} />
+                <Box sx={{flex: 1, height: '1px', background: '#D0BE90'}}/>
                 <Typography sx={{
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 10.5,
@@ -118,13 +118,13 @@ const Home = () => {
                 }}>
                     Analysis Tools
                 </Typography>
-                <Box sx={{ flex: 1, height: '1px', background: '#D0BE90' }} />
+                <Box sx={{flex: 1, height: '1px', background: '#D0BE90'}}/>
             </Box>
 
             {/* ── Tool cards ── */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr'},
                 gap: 1.5,
                 width: '100%',
                 maxWidth: 700,
@@ -172,7 +172,7 @@ const Home = () => {
                             flexShrink: 0,
                             mt: 0.25,
                         }}>
-                            <tool.Icon sx={{ fontSize: 22, color: tool.iconColor }} />
+                            <tool.Icon sx={{fontSize: 22, color: tool.iconColor}}/>
                         </Box>
 
                         {/* Text */}
@@ -225,21 +225,38 @@ const Home = () => {
             </Box>
 
             {/* ── External links ── */}
-            <Box sx={{ display: 'flex', gap: 3 }}>
+            <Box sx={{display: 'flex', gap: 3}}>
                 <Tooltip title="Opens iGEM wiki in a new tab" arrow>
                     <Link href="https://2025.igem.wiki/marburg/" target="_blank" underline="none"
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.8, fontSize: '0.85rem', fontWeight: 500, color: '#2A6B68', '&:hover': { color: '#3D9490' } }}>
-                        <ScienceIcon sx={{ fontSize: 15 }} />
+                          sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.8,
+                              fontSize: '0.85rem',
+                              fontWeight: 500,
+                              color: '#2A6B68',
+                              '&:hover': {color: '#3D9490'}
+                          }}>
+                        <ScienceIcon sx={{fontSize: 15}}/>
                         iGEM Wiki
-                        <ExitIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                        <ExitIcon sx={{fontSize: 12, opacity: 0.6}}/>
                     </Link>
                 </Tooltip>
                 <Tooltip title="Opens GitHub in a new tab" arrow>
-                    <Link href="https://github.com/Jaisaiarun/mATChmaker-iGEM-Marburg-2025" target="_blank" underline="none"
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.8, fontSize: '0.85rem', fontWeight: 500, color: '#5C5341', '&:hover': { color: '#1C1A14' } }}>
-                        <GitHubIcon sx={{ fontSize: 15 }} />
+                    <Link href="https://github.com/Jaisaiarun/mATChmaker-iGEM-Marburg-2025" target="_blank"
+                          underline="none"
+                          sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.8,
+                              fontSize: '0.85rem',
+                              fontWeight: 500,
+                              color: '#5C5341',
+                              '&:hover': {color: '#1C1A14'}
+                          }}>
+                        <GitHubIcon sx={{fontSize: 15}}/>
                         GitHub
-                        <ExitIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                        <ExitIcon sx={{fontSize: 12, opacity: 0.6}}/>
                     </Link>
                 </Tooltip>
             </Box>

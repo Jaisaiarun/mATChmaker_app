@@ -2,15 +2,7 @@
 """API for PARSECT."""
 
 from flask import Response, jsonify
-from routes.app import app
-from routes.retrieval import blueprint_retrieve
-from routes.submit import blueprint_submit_raw, blueprint_submit_quick
-from routes.submit_tte import blueprint_submit_tte
-from routes.submit_paras_annotation import blueprint_paras_annotation
-from routes.submit_xu_xut import blueprint_xu_xut_annotation
-from routes.submit_antismash import blueprint_antismash
-from routes.data_annotation import blueprint_annotate_data
-from routes.file_download import blueprint_file_download
+
 from routes.annotation_editor import (
     blueprint_check_smiles,
     blueprint_check_substrate_name,
@@ -19,7 +11,16 @@ from routes.annotation_editor import (
     blueprint_check_protein_name,
     blueprint_check_domain_name,
 )
+from routes.app import app
+from routes.data_annotation import blueprint_annotate_data
+from routes.file_download import blueprint_file_download
+from routes.retrieval import blueprint_retrieve
 from routes.sql import blueprint_sql
+from routes.submit import blueprint_submit_raw, blueprint_submit_quick
+from routes.submit_antismash import blueprint_antismash
+from routes.submit_paras_annotation import blueprint_paras_annotation
+from routes.submit_tte import blueprint_submit_tte
+from routes.submit_xu_xut import blueprint_xu_xut_annotation
 
 app.register_blueprint(blueprint_retrieve)
 app.register_blueprint(blueprint_submit_raw)
@@ -48,7 +49,10 @@ def not_found(error) -> Response:
 def index() -> Response:
     return app.send_static_file("index.html")
 
+
 APP_VERSION = "1.5.0"
+
+
 # api endpoint for fetching version
 @app.route("/api/version")
 def version() -> Response:

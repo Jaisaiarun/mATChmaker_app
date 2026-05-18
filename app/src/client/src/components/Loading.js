@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 
 /**
  * Loading component that displays a loading spinner with two frames.
- * 
+ *
  * @param {Object} props - The component props.
  * @param {string} frame1 - Path to the first frame of the loading spinner.
  * @param {string} frame2 - Path to the second frame of the loading spinner.
- * @returns {React.ReactElement} - The component showing the loading spinner. 
+ * @returns {React.ReactElement} - The component showing the loading spinner.
  */
-const Loading = ({ frame1, frame2 }) => {
+const Loading = ({frame1, frame2}) => {
     // state to manage which image is currently shown
     const [currentImage, setCurrentImage] = useState(frame1);
 
@@ -23,7 +23,7 @@ const Loading = ({ frame1, frame2 }) => {
     }, [frame1, frame2]);
 
     return (
-        <div 
+        <div
             className='loader-container'
             style={{
                 display: 'flex',
@@ -33,10 +33,10 @@ const Loading = ({ frame1, frame2 }) => {
                 width: '100%'   // take full width of the parent container
             }}
         >
-            <img 
+            <img
                 width='500px'
-                src={`${process.env.PUBLIC_URL}/${currentImage}`} 
-                alt='Loading...' 
+                src={`${process.env.PUBLIC_URL}/${currentImage}`}
+                alt='Loading...'
             />
         </div>
     );

@@ -9,10 +9,11 @@ import re
 import threading
 import time
 import uuid
-from pathlib import Path
-
 from Bio import SeqIO
+from Bio.SeqFeature import SeqFeature, FeatureLocation
+from collections import defaultdict
 from flask import Blueprint, request
+from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
@@ -24,8 +25,6 @@ from .xu_xut_utils import (
     build_xu_buffer,
     infer_is_protein,
 )
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-from collections import defaultdict
 
 blueprint_xu_xut_annotation = Blueprint("xu_xut_annotation", __name__)
 
@@ -64,19 +63,19 @@ def run_xu_xut_annotation(job_id: str, input_path: str, created_by: str) -> None
 
         total_groups = len(record_groups)
         xut_grouped = defaultdict(list)
-        xu_grouped  = defaultdict(list)
-        table_rows  = []
+        xu_grouped = defaultdict(list)
+        table_rows = []
 
         for idx, (group_name, cds_map, seq, is_protein, original_name) in enumerate(record_groups):
             app.config["JOB_RESULTS"][job_id]["progress"] = {
-                "phase":   "annotating",
+                "phase": "annotating",
                 "message": f"Annotating {group_name}...",
                 "current": idx + 1,
-                "total":   total_groups,
+                "total": total_groups,
             }
 
             xut_buffer = build_xut_buffer(cds_map, seq, is_protein)
-            xu_buffer  = build_xu_buffer(cds_map, seq, is_protein)
+            xu_buffer = build_xu_buffer(cds_map, seq, is_protein)
 
             xut_grouped[original_name].extend(xut_buffer)
             xu_grouped[original_name].extend(xu_buffer)
@@ -84,34 +83,34 @@ def run_xu_xut_annotation(job_id: str, input_path: str, created_by: str) -> None
             # collect table rows for the results page
             for item in xut_buffer:
                 table_rows.append({
-                    "type":            "XUT",
-                    "record":          group_name,
+                    "type": "XUT",
+                    "record": group_name,
                     "original_record": original_name,
                     "module_position": item["module_position"],
-                    "label":           item["label"],
-                    "start":           item["start"],
-                    "end":             item["end"],
-                    "length":          len(item["sequence"]),
-                    "sequence":        item["sequence"],
+                    "label": item["label"],
+                    "start": item["start"],
+                    "end": item["end"],
+                    "length": len(item["sequence"]),
+                    "sequence": item["sequence"],
                 })
             for item in xu_buffer:
                 table_rows.append({
-                    "type":            "XU",
-                    "record":          group_name,
+                    "type": "XU",
+                    "record": group_name,
                     "original_record": original_name,
                     "module_position": item["module_position"],
-                    "label":           item["label"],
-                    "start":           item["start"],
-                    "end":             item["end"],
-                    "length":          len(item["sequence"]),
-                    "sequence":        item["sequence"],
+                    "label": item["label"],
+                    "start": item["start"],
+                    "end": item["end"],
+                    "length": len(item["sequence"]),
+                    "sequence": item["sequence"],
                 })
 
         app.config["JOB_RESULTS"][job_id]["progress"] = {
-            "phase":   "saving",
+            "phase": "saving",
             "message": "Writing annotated GenBank file...",
             "current": total_groups,
-            "total":   total_groups,
+            "total": total_groups,
         }
 
         # write features back into each record
@@ -124,26 +123,26 @@ def run_xu_xut_annotation(job_id: str, input_path: str, created_by: str) -> None
 
             for item in xut_grouped.get(record.name, []):
                 record.features.append(SeqFeature(
-                    location   = FeatureLocation(item["start"], item["end"], strand=1),
-                    type       = "XUT_mATChmaker",
-                    qualifiers = {
-                        "label":           [item["label"]],
+                    location=FeatureLocation(item["start"], item["end"], strand=1),
+                    type="XUT_mATChmaker",
+                    qualifiers={
+                        "label": [item["label"]],
                         "module_position": [str(item["module_position"])],
-                        "created_by":      [created_by],
-                        "modified_by":     [created_by],
-                        "translation":     [item["sequence"]],
+                        "created_by": [created_by],
+                        "modified_by": [created_by],
+                        "translation": [item["sequence"]],
                     },
                 ))
             for item in xu_grouped.get(record.name, []):
                 record.features.append(SeqFeature(
-                    location   = FeatureLocation(item["start"], item["end"], strand=1),
-                    type       = "XU_mATChmaker",
-                    qualifiers = {
-                        "label":           [item["label"]],
+                    location=FeatureLocation(item["start"], item["end"], strand=1),
+                    type="XU_mATChmaker",
+                    qualifiers={
+                        "label": [item["label"]],
                         "module_position": [str(item["module_position"])],
-                        "created_by":      [created_by],
-                        "modified_by":     [created_by],
-                        "translation":     [item["sequence"]],
+                        "created_by": [created_by],
+                        "modified_by": [created_by],
+                        "translation": [item["sequence"]],
                     },
                 ))
 
@@ -151,21 +150,21 @@ def run_xu_xut_annotation(job_id: str, input_path: str, created_by: str) -> None
             updated_records.append(record)
 
         clean_stem = re.sub(r'^[a-f0-9\-]+_[AB]\d*_', '', gbk_path.stem)
-        out_name   = f"{clean_stem}_XUT_XU_annotated.gb"
-        out_path   = Path(TEMP_DIR) / out_name
+        out_name = f"{clean_stem}_XUT_XU_annotated.gb"
+        out_path = Path(TEMP_DIR) / out_name
         SeqIO.write(updated_records, str(out_path), "genbank")
 
-        app.config["JOB_RESULTS"][job_id]["status"]         = str(Status.Success).lower()
-        app.config["JOB_RESULTS"][job_id]["message"]         = "XUT/XU annotation complete"
-        app.config["JOB_RESULTS"][job_id]["results"]         = table_rows
-        app.config["JOB_RESULTS"][job_id]["annotated_file"]  = out_name
-        app.config["JOB_RESULTS"][job_id]["gb_file_paths"]   = {out_name: str(out_path)}
+        app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Success).lower()
+        app.config["JOB_RESULTS"][job_id]["message"] = "XUT/XU annotation complete"
+        app.config["JOB_RESULTS"][job_id]["results"] = table_rows
+        app.config["JOB_RESULTS"][job_id]["annotated_file"] = out_name
+        app.config["JOB_RESULTS"][job_id]["gb_file_paths"] = {out_name: str(out_path)}
 
     except Exception as e:
         app.logger.error("run_xu_xut_annotation error for job %s: %s", job_id, e)
-        app.config["JOB_RESULTS"][job_id]["status"]  = str(Status.Failure).lower()
-        app.config["JOB_RESULTS"][job_id]["message"]  = str(e)
-        app.config["JOB_RESULTS"][job_id]["results"]  = []
+        app.config["JOB_RESULTS"][job_id]["status"] = str(Status.Failure).lower()
+        app.config["JOB_RESULTS"][job_id]["message"] = str(e)
+        app.config["JOB_RESULTS"][job_id]["results"] = []
 
     try:
         os.remove(input_path)
@@ -190,27 +189,27 @@ def submit_xu_xut():
 
     created_by = request.form.get("created_by", "mATChmaker").strip() or "mATChmaker"
 
-    job_id    = str(uuid.uuid4())
+    job_id = str(uuid.uuid4())
     timestamp = int(time.time())
 
     os.makedirs(TEMP_DIR, exist_ok=True)
-    safe_name  = secure_filename(f.filename)
+    safe_name = secure_filename(f.filename)
     input_path = os.path.join(TEMP_DIR, f"{job_id}_A_{safe_name}")
     f.save(input_path)
 
     app.config["JOB_RESULTS"][job_id] = {
-        "status":         str(Status.Pending).lower(),
-        "message":        "XUT/XU annotation job is pending",
-        "job_type":       "xu_xut_annotation",
-        "results":        [],
-        "timestamp":      timestamp,
-        "gb_file_paths":  {},
+        "status": str(Status.Pending).lower(),
+        "message": "XUT/XU annotation job is pending",
+        "job_type": "xu_xut_annotation",
+        "results": [],
+        "timestamp": timestamp,
+        "gb_file_paths": {},
         "annotated_file": None,
         "progress": {
-            "phase":   "queued",
+            "phase": "queued",
             "message": "Queued...",
             "current": 0,
-            "total":   0,
+            "total": 0,
         },
     }
 
