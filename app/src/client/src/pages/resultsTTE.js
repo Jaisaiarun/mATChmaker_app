@@ -589,6 +589,7 @@ const ResultsTTE = () => {
         URL.revokeObjectURL(url);
     };
 
+// TODO: Improve loading animation - Loading seconds not working
     // ── loading screen ────────────────────────────────────────────────────────
     if (isLoading) {
         const pct = progress?.total > 0
