@@ -11,6 +11,7 @@ services:
     volumes:
       - ./models:/app/models:ro
       - ./antismash_databases:/app/antismash_databases
+      - ./mibig_nrps_db:/app/mibig_nrps_db
     environment:
       - MODEL_DIR=/app/models
       - ANTISMASH_DB_DIR=/app/antismash_databases

@@ -173,4 +173,5 @@ condensed/out/*
 
 app/antismash_databases/*
 app/models/*
+app/mibig_nrps_db/*
 

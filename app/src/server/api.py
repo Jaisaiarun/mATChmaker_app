@@ -20,7 +20,9 @@ from routes.submit import blueprint_submit_raw, blueprint_submit_quick
 from routes.submit_antismash import blueprint_antismash
 from routes.submit_paras_annotation import blueprint_paras_annotation
 from routes.submit_tte import blueprint_submit_tte
+from routes.submit_tte_search import blueprint_submit_tte_search
 from routes.submit_xu_xut import blueprint_xu_xut_annotation
+from routes.build_tte_db import build_tte_db_if_needed
 
 app.register_blueprint(blueprint_retrieve)
 app.register_blueprint(blueprint_submit_raw)
@@ -34,10 +36,15 @@ app.register_blueprint(blueprint_submit_annotations)
 app.register_blueprint(blueprint_check_protein_name)
 app.register_blueprint(blueprint_sql)
 app.register_blueprint(blueprint_submit_tte)
+app.register_blueprint(blueprint_submit_tte_search)
 app.register_blueprint(blueprint_paras_annotation)
 app.register_blueprint(blueprint_xu_xut_annotation)
 app.register_blueprint(blueprint_antismash)
 app.register_blueprint(blueprint_file_download)
+
+
+# ── Build the precomputed TTE reference DB once at app import (gunicorn --preload). ──
+build_tte_db_if_needed()
 
 
 @app.errorhandler(404)
