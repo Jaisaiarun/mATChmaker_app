@@ -14,6 +14,7 @@ swapping the contents of MIBIG_NRPS_DIR).
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 from Bio import SeqIO
@@ -39,13 +40,21 @@ def _extract_cluster_metadata(gbk_path: Path) -> dict:
     Pull cluster-level metadata from the GenBank headers and the first
     protocluster feature.  Returns a dict of fields the search route can
     surface in its hit rows.
+
+    Captures multiple identifier candidates so the frontend can prefer
+    whichever is most informative for a given corpus (MIBiG IDs, NCBI
+    accessions, strain names, custom filenames, etc.).
     """
     meta = {
         "locus": "",
         "definition": "",
         "source_organism": "",
+        "organism": "",
+        "strain": "",
         "product_class": "",
         "accession": "",
+        "comment": "",
+        "display_name": "",
     }
     try:
         # Use first record only — MIBiG-style cluster files are single-record.
@@ -53,10 +62,29 @@ def _extract_cluster_metadata(gbk_path: Path) -> dict:
         meta["locus"] = rec.name or ""
         meta["definition"] = rec.description or ""
         meta["accession"] = rec.id or ""
+
+        # `source` is the GenBank SOURCE line (genus/species).  `organism` is the
+        # ORGANISM sub-line (often includes strain).  Capture both — they differ
+        # in custom-annotated files and we want to display the more specific one.
         meta["source_organism"] = rec.annotations.get("source", "") or ""
+        meta["organism"] = rec.annotations.get("organism", "") or ""
+
+        # Try to pull a strain identifier from the organism string, since many
+        # personal corpora put strain info there but not in /strain= qualifiers.
+        strain_match = re.search(
+            r"strain\s+([A-Za-z0-9._\-]+)", meta["organism"] or meta["source_organism"]
+        )
+        if strain_match:
+            meta["strain"] = strain_match.group(1)
+
+        # The COMMENT field often carries antiSMASH version / cluster numbering /
+        # original-source notes that don't appear anywhere else.  Truncate so the
+        # JSON cache doesn't bloat on multi-paragraph comments.
+        comment = rec.annotations.get("comment", "")
+        if comment:
+            meta["comment"] = comment[:500]
 
         # Collect distinct /product= values from protocluster features.
-        # Most MIBiG entries have a single product type; some have several.
         product_classes = []
         for feat in rec.features:
             if feat.type == "protocluster":
@@ -65,6 +93,21 @@ def _extract_cluster_metadata(gbk_path: Path) -> dict:
                     if v and v not in product_classes:
                         product_classes.append(v)
         meta["product_class"] = " | ".join(product_classes)
+
+        # Build the best display name we can.  Preference order:
+        #   1. organism + strain (e.g. "Xenorhabdus hominickii DSM 17903")
+        #   2. organism alone
+        #   3. source line
+        #   4. definition line (truncated)
+        #   5. locus
+        if meta["organism"]:
+            meta["display_name"] = meta["organism"]
+        elif meta["source_organism"]:
+            meta["display_name"] = meta["source_organism"]
+        elif meta["definition"]:
+            meta["display_name"] = meta["definition"][:80]
+        else:
+            meta["display_name"] = meta["locus"]
     except Exception as exc:
         app.logger.warning("Could not read metadata from %s: %s", gbk_path.name, exc)
     return meta

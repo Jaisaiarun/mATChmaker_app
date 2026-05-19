@@ -185,10 +185,14 @@ def run_tte_search(
                     "best_db_cds": best["best_db_cds"],
                     "ref_tte_len": best["ref_tte_len"],
                     "db_tte_len": best["db_tte_len"],
-                    "definition": meta.get("definition", ""),
+                    "display_name": meta.get("display_name", "") or cluster["bgc_id"],
+                    "organism": meta.get("organism", ""),
                     "source_organism": meta.get("source_organism", ""),
+                    "strain": meta.get("strain", ""),
+                    "definition": meta.get("definition", ""),
                     "product_class": meta.get("product_class", ""),
                     "accession": meta.get("accession", ""),
+                    "locus": meta.get("locus", ""),
                     "db_tte_count": len(cluster.get("ttes", [])),
                 })
 

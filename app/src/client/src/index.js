@@ -25,6 +25,8 @@ import QueryDatabase from './pages/query_database'
 
 import SubmitTTE from "./pages/submitTTE";
 import ResultsTTE from './pages/resultsTTE';
+import SubmitTTESearch from './pages/submitTTESearch';
+import ResultsTTESearch from './pages/resultsTTESearch';
 import SubmitParasAnnotation from './pages/submitParasAnnotation';
 import SubmitXuXut from './pages/submitXuXut';
 import ResultsXuXut from './pages/resultsxuxut';
@@ -277,6 +279,10 @@ const CustomToolbar = () => {
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         TTE Comparison
                     </MenuItem>
+                    <MenuItem onClick={() => handleMenuItemClick("/submit_tte_search")}>
+                        <UploadIcon sx={{marginRight: '10px'}}/>
+                        TTE Reference Search
+                    </MenuItem>
                     <MenuItem onClick={() => handleMenuItemClick('/annotate_gbk')}>
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         Annotate GenBank (PARAS)
@@ -359,6 +365,10 @@ function AppRoutes() {
                     element={<SubmitTTE/>}
                 />
                 <Route
+                    path="/submit_tte_search"
+                    element={<SubmitTTESearch/>}
+                />
+                <Route
                     path='/annotate_gbk'
                     element={<SubmitParasAnnotation/>}/>
                 <Route
@@ -378,6 +388,10 @@ function AppRoutes() {
                 <Route
                     path='/results/tte/:jobId'
                     element={<ResultsTTE/>}
+                />
+                <Route
+                    path='/results/tte_search/:jobId'
+                    element={<ResultsTTESearch/>}
                 />
                 <Route
                     path='/results/:jobId'
