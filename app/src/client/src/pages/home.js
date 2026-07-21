@@ -8,8 +8,18 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import HubIcon from '@mui/icons-material/Hub';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 
 const tools = [
+    {
+        href: '/submit_tte_search',
+        label: 'TTE Reference Search',
+        description: 'Search a query sequence against the precomputed TTE reference database',
+        accent: '#1C6B8C',
+        iconBg: 'rgba(28,107,140,0.10)',
+        Icon: TravelExploreIcon,
+        iconColor: '#1C6B8C',
+    },
     {
         href: '/submit_tte',
         label: 'TTE Comparison',
@@ -59,45 +69,32 @@ const Home = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 px: {xs: 3, sm: 4},
-                pt: {xs: 6, sm: 8},
-                pb: 8,
+                pt: {xs: 3, sm: 4},
+                pb: 5,
             }}
         >
-            {/* ── Logo — large, centred on parchment ── */}
+            {/* ── Logo — trimmed asset, no duplicate wordmark below ── */}
             <Box
                 component="img"
                 src="/mATCmaker_transparent.png"
                 alt="mATChmaker logo"
                 sx={{
-                    width: {xs: 220, sm: 280, md: 340},
+                    width: {xs: 150, sm: 180, md: 210},
                     height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
-                    mb: 3,
+                    mb: 1.5,
                 }}
             />
-
-            {/* ── Title ── */}
-            <Typography sx={{
-                fontFamily: "'DM Serif Display', Georgia, serif",
-                fontSize: {xs: '2rem', sm: '2.6rem'},
-                letterSpacing: '-0.02em',
-                lineHeight: 1.05,
-                color: '#1C1A14',
-                mb: 1.5,
-                textAlign: 'center',
-            }}>
-                mATChmaker
-            </Typography>
 
             {/* ── Subtitle ── */}
             <Typography sx={{
                 color: '#5C5341',
                 maxWidth: 520,
-                lineHeight: 1.65,
-                fontSize: '1rem',
+                lineHeight: 1.55,
+                fontSize: '0.95rem',
                 textAlign: 'center',
-                mb: 5,
+                mb: 3,
             }}>
                 A toolkit for modular NRPS domain compatibility analysis and substrate matching
                 across biosynthetic gene clusters.
@@ -106,7 +103,7 @@ const Home = () => {
             {/* ── Section label ── */}
             <Box sx={{
                 display: 'flex', alignItems: 'center', gap: 2,
-                width: '100%', maxWidth: 700, mb: 2.5,
+                width: '100%', maxWidth: 760, mb: 2,
             }}>
                 <Box sx={{flex: 1, height: '1px', background: '#D0BE90'}}/>
                 <Typography sx={{
@@ -124,11 +121,11 @@ const Home = () => {
             {/* ── Tool cards ── */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr'},
-                gap: 1.5,
+                gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr'},
+                gap: 1.25,
                 width: '100%',
-                maxWidth: 700,
-                mb: 5,
+                maxWidth: 760,
+                mb: 4,
             }}>
                 {tools.map((tool) => (
                     <Box
@@ -138,9 +135,9 @@ const Home = () => {
                         sx={{
                             display: 'flex',
                             alignItems: 'flex-start',
-                            gap: 2,
+                            gap: 1.75,
                             textDecoration: 'none',
-                            p: '18px 20px',
+                            p: '15px 18px',
                             background: '#FAF6EC',
                             border: '1px solid #E0CFA4',
                             borderRadius: '10px',
@@ -163,7 +160,7 @@ const Home = () => {
                     >
                         {/* Icon */}
                         <Box sx={{
-                            width: 44, height: 44,
+                            width: 40, height: 40,
                             borderRadius: '10px',
                             background: tool.iconBg,
                             display: 'flex',
@@ -172,7 +169,7 @@ const Home = () => {
                             flexShrink: 0,
                             mt: 0.25,
                         }}>
-                            <tool.Icon sx={{fontSize: 22, color: tool.iconColor}}/>
+                            <tool.Icon sx={{fontSize: 20, color: tool.iconColor}}/>
                         </Box>
 
                         {/* Text */}

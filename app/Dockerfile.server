@@ -17,8 +17,8 @@ COPY server-requirements.txt /app/
 RUN mamba env create -n web -f server-environment.yml \
  && conda clean -afy
 
-# Allow non-root user to write antiSMASH runtime-generated assets\
-RUN chown -R ${USER_UID}:${USER_GID} /opt/conda/envs/web/lib/python3.9/site-packages/antismash' Dockerfile.server
+# Allow non-root user to write antiSMASH runtime-generated assets
+RUN chown -R ${USER_UID}:${USER_GID} /opt/conda/envs/web/lib/python3.9/site-packages/antismash
 
 RUN echo "conda activate web" >> /etc/bash.bashrc
 
