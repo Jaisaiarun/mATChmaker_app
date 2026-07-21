@@ -220,7 +220,7 @@ const Home = () => {
                     color: '#7A6A50',
                     letterSpacing: '0.01em',
                 }}>
-                    Dr. Patrick Gonschorek &nbsp;·&nbsp; Dr. Christian Schelhas &nbsp;·&nbsp; Jaisaiarun
+                    Dr. Patrick Gonschorek &nbsp;·&nbsp; Dr. Christian Schelhas &nbsp;·&nbsp; Jaisaiarun Prathapam Srinivasan
                 </Typography>
             </Box>
 

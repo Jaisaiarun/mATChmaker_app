@@ -589,7 +589,7 @@ const ResultsTTE = () => {
         URL.revokeObjectURL(url);
     };
 
-// TODO: Improve loading animation - Loading seconds not working
+// TODO: Improve loading animation - Preparing model loading seconds not working
     // ── loading screen ────────────────────────────────────────────────────────
     if (isLoading) {
         const pct = progress?.total > 0

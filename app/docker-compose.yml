@@ -8,6 +8,10 @@ services:
     env_file:
       - .env
     container_name: paras-server
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     volumes:
       - ./models:/app/models:ro
       - ./antismash_databases:/app/antismash_databases
@@ -42,6 +46,10 @@ services:
       - "4010:80"
     restart: always
     container_name: paras-client
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     networks: [ paras-network ]
     depends_on:
       - paras-server
@@ -49,3 +57,5 @@ services:
 networks:
   paras-network:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
