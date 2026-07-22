@@ -24,34 +24,54 @@ const DEFAULT_PAGE_SIZE = 100;
 const MAX_EXPORT_ROWS = 100000;
 
 const QUERYOPTIONS = [
-    // {
-    //   key: 'free',
-    //   label: 'Free-form SQL',
-    //   kind: 'free',
-    //   defaultQuery: 'SELECT name, smiles FROM substrate LIMIT 500',
-    //   Editor: ({ query, setQuery }) => (
-    //     <TextField
-    //       label="SQL query"
-    //       value={query}
-    //       onChange={(e) => setQuery(e.target.value)}
-    //       fullWidth
-    //       multiline
-    //       minRows={3}
-    //       placeholder="e.g., SELECT * FROM substrate LIMIT 500"
-    //     />
-    //   ),
-    // },
     {
-        key: 'substrate',
-        label: 'A-domains by substrate',
+        key: 'clusterOrganism',
+        label: 'Clusters by organism / species',
         kind: 'preset',
-        defaultQuery: "SELECT name, smiles FROM substrate LIMIT 500",
+        defaultQuery: "SELECT bgc_id, organism, product_class FROM cluster LIMIT 500",
+        Editor: ({presetInput, setPresetInput, setQuery}) => (
+            <TextField
+                label="Organism / species (partial match)"
+                value={presetInput}
+                onChange={(e) => {
+                    const v = e.target.value;
+                    setPresetInput(v);
+                    const t = v.trim();
+                    setQuery(
+                        t
+                            ? `
+    SELECT
+      id                AS cluster_id,
+      bgc_id,
+      filename,
+      organism,
+      strain,
+      product_class,
+      definition
+    FROM cluster
+    WHERE organism LIKE '%${t}%' COLLATE NOCASE
+       OR source_organism LIKE '%${t}%' COLLATE NOCASE
+    ORDER BY organism
+    LIMIT 500
+              `.replace(/\s+/g, ' ').trim()
+                            : ''
+                    );
+                }}
+                fullWidth
+                placeholder="e.g., Photorhabdus or Xenorhabdus"
+            />
+        ),
+    },
+    {
+        key: 'clusterProduct',
+        label: 'Clusters by product class',
+        kind: 'preset',
+        defaultQuery: "SELECT DISTINCT product_class FROM cluster LIMIT 500",
         Editor: ({setQuery}) => {
             const [options, setOptions] = useState([]);
             const [value, setValue] = useState(null);
             const [loading, setLoading] = useState(false);
 
-            // Fetch substrate names once
             useEffect(() => {
                 let mounted = true;
                 setLoading(true);
@@ -59,58 +79,35 @@ const QUERYOPTIONS = [
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        query: 'SELECT name FROM substrate ORDER BY name',
+                        query: "SELECT DISTINCT product_class FROM cluster WHERE product_class != '' ORDER BY product_class",
                         page: 0,
                         pageSize: 5000,
                     }),
                 })
                     .then((r) => r.json())
                     .then((d) => {
-                        if (mounted) {
-                            setOptions(d.rows?.map((r) => r.name) || []);
-                        }
+                        if (mounted) setOptions(d.rows?.map((r) => r.product_class) || []);
                     })
                     .catch(() => setOptions([]))
                     .finally(() => setLoading(false));
-
                 return () => {
                     mounted = false;
                 };
             }, []);
 
-            // Compile SQL when a substrate is chosen
             useEffect(() => {
                 if (!value) {
                     setQuery('');
                     return;
                 }
-
                 const sql = `
-SELECT
-  ad.id                          AS domain_id,
-  p.id                           AS protein_id,
-  group_concat(ps.synonym, ', ') AS protein_synonyms,
-  pda.domain_number,
-  ad.signature,
-  ad.extended_signature,
-  s.name                         AS substrate_name,
-  s.smiles                       AS substrate_smiles
-FROM substrate_domain_association sda
-JOIN substrate                    s   ON s.name = sda.substrate_name
-JOIN adenylation_domain           ad  ON ad.id = sda.domain_id
-JOIN protein_domain_association   pda ON pda.domain_id = ad.id
-JOIN protein                      p   ON p.id = pda.protein_id
-LEFT JOIN protein_synonym         ps  ON ps.protein_id = p.id
-WHERE s.name = '${value}' COLLATE NOCASE
-GROUP BY
-  ad.id, p.id, pda.domain_number,
-  ad.signature, ad.extended_signature,
-  s.name, s.smiles
-ORDER BY
-  p.id, pda.domain_number
-LIMIT 500
-      `.replace(/\s+/g, ' ').trim();
-
+    SELECT
+      id AS cluster_id, bgc_id, organism, strain, product_class, definition
+    FROM cluster
+    WHERE product_class LIKE '%${value}%' COLLATE NOCASE
+    ORDER BY organism
+    LIMIT 500
+        `.replace(/\s+/g, ' ').trim();
                 setQuery(sql);
             }, [value, setQuery]);
 
@@ -123,8 +120,8 @@ LIMIT 500
                     renderInput={(params) => (
                         <TextField
                             {...params}
-                            label="Substrate"
-                            placeholder="Start typing a substrate name…"
+                            label="Product class"
+                            placeholder="Start typing a product class…"
                             InputProps={{
                                 ...params.InputProps,
                                 endAdornment: (
@@ -144,14 +141,13 @@ LIMIT 500
         },
     },
     {
-        key: 'proteinId',
-        label: 'Substrate specificities by protein ID',
+        key: 'tteByCluster',
+        label: 'TTE sequences by BGC ID',
         kind: 'preset',
-        defaultQuery: "SELECT * FROM protein_synonym LIMIT 500",
-        // Editor compiles SQL directly into the main query state
+        defaultQuery: "SELECT bgc_id, cds_locus_tag, tte_len FROM tte LIMIT 500",
         Editor: ({presetInput, setPresetInput, setQuery}) => (
             <TextField
-                label="Protein ID"
+                label="BGC ID (partial match)"
                 value={presetInput}
                 onChange={(e) => {
                     const v = e.target.value;
@@ -161,41 +157,35 @@ LIMIT 500
                         t
                             ? `
     SELECT
-      ad.id                    AS domain_id,
-      p.id                     AS protein_id,
-      ps.synonym               AS protein_synonym,
-      pda.domain_number,
-      ad.signature,
-      ad.extended_signature,
-      s.name                   AS substrate_name,
-      s.smiles                 AS substrate_smiles
-    FROM protein_synonym              ps
-    JOIN protein                      p    ON p.id = ps.protein_id
-    JOIN protein_domain_association   pda  ON pda.protein_id = p.id
-    JOIN adenylation_domain           ad   ON ad.id = pda.domain_id
-    LEFT JOIN substrate_domain_association sda ON sda.domain_id = ad.id
-    LEFT JOIN substrate               s    ON s.name = sda.substrate_name
-    WHERE ps.synonym = '${t}' COLLATE NOCASE
-    ORDER BY pda.domain_number, s.name
+      c.bgc_id,
+      c.organism,
+      t.cds_locus_tag,
+      t.region_id,
+      t.tte_len,
+      t.monomer_pairs,
+      t.tte_seq
+    FROM tte t
+    JOIN cluster c ON c.id = t.cluster_id
+    WHERE c.bgc_id LIKE '%${t}%' COLLATE NOCASE
+    ORDER BY c.bgc_id, t.region_idx
     LIMIT 500
               `.replace(/\s+/g, ' ').trim()
                             : ''
                     );
                 }}
                 fullWidth
-                placeholder="e.g., P48633.1"
+                placeholder="e.g., BGC0000311"
             />
         ),
     },
     {
-        key: 'species',
-        label: 'Substrate specificities by species',
+        key: 'domainByCds',
+        label: 'Domains by CDS locus tag',
         kind: 'preset',
-        defaultQuery: "SELECT DISTINCT species FROM taxonomy LIMIT 500",
-        // Editor compiles SQL directly into the main query state
+        defaultQuery: "SELECT aSDomain, specificity, cds_id FROM domain LIMIT 500",
         Editor: ({presetInput, setPresetInput, setQuery}) => (
             <TextField
-                label="Species name"
+                label="CDS locus tag"
                 value={presetInput}
                 onChange={(e) => {
                     const v = e.target.value;
@@ -205,116 +195,69 @@ LIMIT 500
                         t
                             ? `
     SELECT
-      ad.id                    AS domain_id,
-      p.id                     AS protein_id,
-      t.species                AS species,
-      pda.domain_number,
-      ad.signature,
-      ad.extended_signature,
-      s.name                   AS substrate_name,
-      s.smiles                 AS substrate_smiles
-    FROM taxonomy                     t
-    JOIN protein                      p    ON p.taxonomy_id = t.id
-    JOIN protein_domain_association   pda  ON pda.protein_id = p.id
-    JOIN adenylation_domain           ad   ON ad.id = pda.domain_id
-    LEFT JOIN substrate_domain_association sda ON sda.domain_id = ad.id
-    LEFT JOIN substrate               s    ON s.name = sda.substrate_name
-    WHERE t.species = '${t}' COLLATE NOCASE
-    ORDER BY pda.domain_number, s.name
+      c.bgc_id,
+      cds.locus_tag,
+      cds.product,
+      d.aSDomain,
+      d.domain_type,
+      d.specificity,
+      d.specificity_score,
+      d.start,
+      d.end
+    FROM domain d
+    JOIN cds     cds ON cds.id = d.cds_id
+    JOIN cluster c   ON c.id = d.cluster_id
+    WHERE cds.locus_tag LIKE '%${t}%' COLLATE NOCASE
+    ORDER BY cds.locus_tag, d.start
     LIMIT 500
               `.replace(/\s+/g, ' ').trim()
                             : ''
                     );
                 }}
                 fullWidth
-                placeholder="e.g., Streptomyces coelicolor"
+                placeholder="e.g., ctg1_orf00012"
             />
         ),
     },
     {
-        key: 'signature',
-        label: 'Substrate specificities by A-domain signature (Hamming ≤ N)',
+        key: 'domainBySpecificity',
+        label: 'A-domains by predicted substrate',
         kind: 'preset',
-        defaultQuery: "SELECT * FROM adenylation_domain LIMIT 500",
-        // Local state inside editor; compiles SQL into `query` (no parsing back)
-        Editor: ({setQuery}) => {
-            const [sig, setSig] = useState('');
-            const [maxDist, setMaxDist] = useState(3); // sensible default
-
-            const updateSQL = (s, d) => {
-                const clamped = Math.max(0, Math.min(10, Number.isFinite(+d) ? +d : 0));
-                const pad = s.toUpperCase().slice(0, 10).padEnd(10, '-'); // GAP token '-'
-                // build 10 char-by-char comparisons
-                const comps = Array.from({length: 10}, (_, i) => {
-                    const idx = i + 1;
-                    return `(substr('${pad}',${idx},1) <> substr(UPPER(substr(ad.signature || '----------',1,10)),${idx},1))`;
-                }).join(' + ');
-                const sql = `
-  WITH d AS (
+        defaultQuery: "SELECT aSDomain, specificity, specificity_score FROM domain LIMIT 500",
+        Editor: ({presetInput, setPresetInput, setQuery}) => (
+            <TextField
+                label="Substrate / specificity call (partial match)"
+                value={presetInput}
+                onChange={(e) => {
+                    const v = e.target.value;
+                    setPresetInput(v);
+                    const t = v.trim();
+                    setQuery(
+                        t
+                            ? `
     SELECT
-      ad.id,
-      ad.signature,
-      ad.extended_signature,
-      (${comps}) AS hamming
-    FROM adenylation_domain ad
-  )
-  SELECT
-    d.id                       AS domain_id,
-    p.id                       AS protein_id,
-    group_concat(ps.synonym, ', ') AS protein_synonyms,
-    pda.domain_number,
-    ad.signature,
-    ad.extended_signature,
-    s.name                     AS substrate_name,
-    s.smiles                   AS substrate_smiles,
-    d.hamming
-  FROM d
-  JOIN adenylation_domain           ad  ON ad.id = d.id
-  JOIN protein_domain_association   pda ON pda.domain_id = ad.id
-  JOIN protein                      p   ON p.id = pda.protein_id
-  LEFT JOIN substrate_domain_association sda ON sda.domain_id = ad.id
-  LEFT JOIN substrate               s   ON s.name = sda.substrate_name
-  LEFT JOIN protein_synonym         ps  ON ps.protein_id = p.id
-  WHERE d.hamming <= ${clamped}
-  GROUP BY
-    d.id, p.id, pda.domain_number,
-    ad.signature, ad.extended_signature,
-    s.name, s.smiles, d.hamming
-  ORDER BY pda.domain_number, s.name
-  LIMIT 500
-        `.replace(/\s+/g, ' ').trim();
-                setQuery(sql);
-            };
-
-            return (
-                <Stack direction={{xs: 'column', sm: 'row'}} spacing={1}>
-                    <TextField
-                        label="Signature (max 10)"
-                        value={sig}
-                        inputProps={{maxLength: 10}}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            setSig(v);
-                            updateSQL(v, maxDist);
-                        }}
-                        fullWidth
-                        placeholder="e.g., S/T-A-V-I-G-H-D-L"
-                    />
-                    <TextField
-                        label="Max Hamming distance"
-                        type="number"
-                        value={maxDist}
-                        inputProps={{min: 0, max: 10, step: 1}}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            setMaxDist(v);
-                            updateSQL(sig, v);
-                        }}
-                        sx={{width: 200}}
-                    />
-                </Stack>
-            );
-        },
+      c.bgc_id,
+      c.organism,
+      cds.locus_tag,
+      d.specificity,
+      d.specificity_score,
+      d.start,
+      d.end
+    FROM domain d
+    JOIN cds     cds ON cds.id = d.cds_id
+    JOIN cluster c   ON c.id = d.cluster_id
+    WHERE d.aSDomain = 'AMP-binding'
+      AND d.specificity LIKE '%${t}%' COLLATE NOCASE
+    ORDER BY d.specificity_score DESC
+    LIMIT 500
+              `.replace(/\s+/g, ' ').trim()
+                            : ''
+                    );
+                }}
+                fullWidth
+                placeholder="e.g., ser, orn, phe"
+            />
+        ),
     },
 ];
 

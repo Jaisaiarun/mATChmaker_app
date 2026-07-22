@@ -274,7 +274,6 @@ const CustomToolbar = () => {
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         Submit
                     </MenuItem>
-
                     <MenuItem onClick={() => handleMenuItemClick("/submit_tte")}>
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         TTE Comparison
@@ -299,14 +298,15 @@ const CustomToolbar = () => {
                         <RetrieveIcon sx={{marginRight: '10px'}}/>
                         Retrieve
                     </MenuItem>
-                    <MenuItem onClick={() => handleMenuItemClick('/data_annotation')}>
-                        <DatasetIcon sx={{marginRight: '10px'}}/>
-                        Data annotation
-                    </MenuItem>
-                    <MenuItem onClick={() => handleMenuItemClick('/query_database')}>
-                        <QueryStatsIcon sx={{marginRight: '10px'}}/>
-                        Query database
-                    </MenuItem>
+                    {/*<MenuItem onClick={() => handleMenuItemClick('/data_annotation')}>*/}
+                    {/*    <DatasetIcon sx={{marginRight: '10px'}}/>*/}
+                    {/*    Data annotation*/}
+                    {/*</MenuItem>*/}
+                    {/*Query database is present but not wokring properly so commented*/}
+                    {/*<MenuItem onClick={() => handleMenuItemClick('/query_database')}>*/}
+                    {/*    <QueryStatsIcon sx={{marginRight: '10px'}}/>*/}
+                    {/*    Query database*/}
+                    {/*</MenuItem>*/}
                     <MenuItem
                         onClick={() => handleExternalLinkClick('https://github.com/Jaisaiarun/mATChmaker_app/issues')}>
                         <GitHubIcon sx={{marginRight: '10px'}}/>

@@ -23,7 +23,6 @@ except Exception:
 
 blueprint_sql = Blueprint("blueprint_sql", __name__)
 
-DB_PATH = os.getenv("SQLITE_PATH", None)  # can be set via env
 MAX_PAGE_SIZE = int(os.getenv("MAX_PAGE_SIZE", "1000"))
 MAX_EXPORT_ROWS = int(os.getenv("MAX_EXPORT_ROWS", "100000"))
 QUERY_TIMEOUT_SECS = float(os.getenv("QUERY_TIMEOUT_SECS", "30"))
@@ -33,9 +32,12 @@ IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def _resolve_sqlite_path() -> str:
-    """Prefer SQLITE_PATH; else, try to derive from SQLAlchemy engine if it's SQLite; else fallback."""
-    if DB_PATH:
-        return DB_PATH
+    """Prefer SQLITE_PATH (read live, not frozen at import) so a startup hook
+    that sets it after this module loads still takes effect; else derive from
+    the SQLAlchemy engine if it's SQLite; else fallback."""
+    env_path = os.getenv("SQLITE_PATH")
+    if env_path:
+        return env_path
     try:
         if sa_engine is not None and sa_engine.url and sa_engine.url.get_backend_name().startswith("sqlite"):
             # this is usually an absolute path; can be ":memory:" too

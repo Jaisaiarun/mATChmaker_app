@@ -3,17 +3,14 @@ import {Box, Card, CardContent, CardHeader, LinearProgress, Typography} from '@m
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from 'recharts';
 import {toast} from 'react-toastify';
 
-const SQL_ANNOTATED_BY_DOMAIN = `
-    SELECT t.domain AS label,
-           COUNT(DISTINCT ad.id) AS value
-    FROM adenylation_domain ad
-        JOIN substrate_domain_association sda
-    ON sda.domain_id = ad.id -- annotated only
-        JOIN protein_domain_association pda ON pda.domain_id = ad.id
-        JOIN protein p ON p.id = pda.protein_id
-        JOIN taxonomy t ON t.id = p.taxonomy_id
-    GROUP BY t.domain
+const SQL_CLUSTERS_BY_PRODUCT = `
+    SELECT product_class AS label,
+           COUNT(*) AS value
+    FROM cluster
+    WHERE product_class != ''
+    GROUP BY product_class
     ORDER BY value DESC
+    LIMIT 12
 `;
 
 const COLORS = [
@@ -35,7 +32,7 @@ export default function Statistics() {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        query: SQL_ANNOTATED_BY_DOMAIN,
+                        query: SQL_CLUSTERS_BY_PRODUCT,
                         page: 0,
                         pageSize: 1000,
                         sortBy: null,
@@ -67,8 +64,8 @@ export default function Statistics() {
     return (
         <Card sx={{height: 420}}>
             <CardHeader
-                title="Annotated A-domains per taxonomic domain"
-                subheader="Counts of distinct adenylation domains that have substrate annotations"
+                title="Clusters per product class"
+                subheader="Number of BGCs in mibig_nrps_db grouped by antiSMASH product class"
             />
             <CardContent sx={{height: 340, position: 'relative'}}>
                 {loading && (
@@ -103,4 +100,3 @@ export default function Statistics() {
         </Card>
     );
 }
-

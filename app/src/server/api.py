@@ -23,6 +23,7 @@ from routes.submit_tte import blueprint_submit_tte
 from routes.submit_tte_search import blueprint_submit_tte_search
 from routes.submit_xu_xut import blueprint_xu_xut_annotation
 from routes.build_tte_db import build_tte_db_if_needed
+from routes.build_mibig_sql_db import build_mibig_sql_db_if_needed
 
 app.register_blueprint(blueprint_retrieve)
 app.register_blueprint(blueprint_submit_raw)
@@ -46,6 +47,12 @@ app.register_blueprint(blueprint_file_download)
 # ── Build the precomputed TTE reference DB once at app import (gunicorn --preload). ──
 build_tte_db_if_needed()
 
+# ── Build the queryable mibig_nrps.db SQLite DB for the Query Database page. ──
+# Defaults SQLITE_PATH to mibig_nrps.db if you haven't set it explicitly (e.g. to
+# keep querying parasect.db instead, export SQLITE_PATH before starting the app,
+# or call build_mibig_sql_db_if_needed(set_sqlite_path=False) here).
+build_mibig_sql_db_if_needed()
+
 
 @app.errorhandler(404)
 def not_found(error) -> Response:
@@ -57,7 +64,7 @@ def index() -> Response:
     return app.send_static_file("index.html")
 
 
-APP_VERSION = "1.5.0"
+APP_VERSION = "2.0.0"
 
 
 # api endpoint for fetching version
