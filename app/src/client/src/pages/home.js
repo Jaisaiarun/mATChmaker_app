@@ -10,16 +10,17 @@ import BiotechIcon from '@mui/icons-material/Biotech';
 import HubIcon from '@mui/icons-material/Hub';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 
+const featuredTool = {
+    href: '/submit_tte_search',
+    label: 'TTE Reference Search',
+    description: 'Search a query sequence against the precomputed TTE reference database',
+    accent: '#1C6B8C',
+    iconBg: 'rgba(28,107,140,0.10)',
+    Icon: TravelExploreIcon,
+    iconColor: '#1C6B8C',
+};
+
 const tools = [
-    {
-        href: '/submit_tte_search',
-        label: 'TTE Reference Search',
-        description: 'Search a query sequence against the precomputed TTE reference database',
-        accent: '#1C6B8C',
-        iconBg: 'rgba(28,107,140,0.10)',
-        Icon: TravelExploreIcon,
-        iconColor: '#1C6B8C',
-    },
     {
         href: '/submit_tte',
         label: 'TTE Comparison',
@@ -64,7 +65,7 @@ const Home = () => {
             className="page-enter"
             sx={{
                 minHeight: '100vh',
-                background: '#EDE5CC',
+                background: '#F2E8D0',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -105,23 +106,89 @@ const Home = () => {
                 display: 'flex', alignItems: 'center', gap: 2,
                 width: '100%', maxWidth: 760, mb: 2,
             }}>
-                <Box sx={{flex: 1, height: '1px', background: '#D0BE90'}}/>
+                <Box sx={{flex: 1, height: '1px', background: '#DCCFA0'}}/>
                 <Typography sx={{
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 10.5,
-                    color: '#B8893A',
+                    color: '#8C7A54',
                     letterSpacing: '0.18em',
                     textTransform: 'uppercase',
                 }}>
                     Analysis Tools
                 </Typography>
-                <Box sx={{flex: 1, height: '1px', background: '#D0BE90'}}/>
+                <Box sx={{flex: 1, height: '1px', background: '#DCCFA0'}}/>
             </Box>
 
-            {/* ── Tool cards ── */}
+            {/* ── Featured tool — TTE Reference Search ── */}
+            <Box
+                component={RouterLink}
+                to={featuredTool.href}
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    textDecoration: 'none',
+                    width: '100%',
+                    maxWidth: 760,
+                    p: '18px 22px',
+                    mb: 1.5,
+                    background: `linear-gradient(135deg, ${featuredTool.accent}14 0%, #FEFCF5 65%)`,
+                    border: `1px solid ${featuredTool.accent}55`,
+                    borderRadius: '12px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                    '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 24px rgba(28,26,20,0.10)',
+                    },
+                }}
+            >
+                <Box sx={{
+                    width: 46, height: 46,
+                    borderRadius: '11px',
+                    background: featuredTool.iconBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <featuredTool.Icon sx={{fontSize: 24, color: featuredTool.iconColor}}/>
+                </Box>
+                <Box sx={{flex: 1, minWidth: 0}}>
+                    <Typography sx={{
+                        fontSize: 9.5,
+                        fontFamily: "'DM Mono', monospace",
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                        color: featuredTool.accent,
+                        mb: 0.3,
+                    }}>
+                        Featured
+                    </Typography>
+                    <Typography sx={{
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        color: '#1C1A14',
+                        mb: 0.3,
+                        lineHeight: 1.3,
+                    }}>
+                        {featuredTool.label}
+                    </Typography>
+                    <Typography sx={{
+                        fontSize: '0.82rem',
+                        color: '#6B5F47',
+                        lineHeight: 1.5,
+                    }}>
+                        {featuredTool.description}
+                    </Typography>
+                </Box>
+            </Box>
+
+            {/* ── Tool cards — even 2x2 grid, no orphaned row ── */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr'},
+                gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr'},
                 gap: 1.25,
                 width: '100%',
                 maxWidth: 760,
@@ -138,7 +205,7 @@ const Home = () => {
                             gap: 1.75,
                             textDecoration: 'none',
                             p: '15px 18px',
-                            background: '#FAF6EC',
+                            background: '#FEFCF5',
                             border: '1px solid #E0CFA4',
                             borderRadius: '10px',
                             position: 'relative',
@@ -207,14 +274,14 @@ const Home = () => {
                 <Typography sx={{
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 11,
-                    color: '#B8893A',
+                    color: '#8C7A54',
                     letterSpacing: '0.05em',
                 }}>
                     Max Planck Institute for Terrestrial Microbiology &nbsp;·&nbsp; AG Bode &nbsp;·&nbsp; NRPS
                 </Typography>
                 <Typography sx={{
                     fontSize: 13,
-                    color: '#7A6A50',
+                    color: '#5C5341',
                     letterSpacing: '0.01em',
                 }}>
                     Dr. Patrick Gonschorek &nbsp;·&nbsp; Dr. Christian Schelhas &nbsp;·&nbsp; Jaisaiarun Prathapam Srinivasan

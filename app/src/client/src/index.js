@@ -234,18 +234,20 @@ const CustomToolbar = () => {
     };
 
     return (
-        <AppBar position='static' sx={{
-            background: 'linear-gradient(90deg, #1C1A14 0%, #2C2616 100%)',
-            borderBottom: '2px solid #B8893A',
+        <AppBar position='static' elevation={0} sx={{
+            background: '#241F16',
+            boxShadow: '0 2px 10px rgba(28,26,20,0.18)',
+            borderBottom: '1px solid rgba(184,137,58,0.35)',
         }}>
             <Toolbar sx={{minHeight: 56, gap: 1}}>
                 <IconButton onClick={handleMenuOpen} sx={{
                     mr: 1,
-                    color: '#E0CFA4',
-                    border: '1px solid rgba(184,137,58,0.3)',
+                    color: '#D9C79C',
+                    border: '1px solid rgba(184,137,58,0.28)',
                     borderRadius: 2,
                     p: '6px',
-                    '&:hover': {backgroundColor: 'rgba(184,137,58,0.12)', borderColor: '#B8893A'},
+                    transition: 'background-color 0.15s, border-color 0.15s',
+                    '&:hover': {backgroundColor: 'rgba(184,137,58,0.14)', borderColor: '#B8893A'},
                 }}>
                     <MdMenu size={18}/>
                 </IconButton>
@@ -259,10 +261,16 @@ const CustomToolbar = () => {
                             mt: 1,
                             border: '1px solid #E0CFA4',
                             borderRadius: 2,
-                            boxShadow: '0 8px 24px rgba(28,26,20,0.14)',
+                            boxShadow: '0 10px 28px rgba(28,26,20,0.16)',
                             backgroundColor: '#FEFCF5',
                             minWidth: 220,
                             py: 0.5,
+                            '& .MuiMenuItem-root': {
+                                fontSize: '0.88rem',
+                                color: '#3A3427',
+                                '&:hover': {backgroundColor: 'rgba(184,137,58,0.10)'},
+                                '& svg': {fontSize: 19, color: '#8C6420'},
+                            },
                         }
                     }}
                 >
@@ -274,6 +282,7 @@ const CustomToolbar = () => {
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         Submit
                     </MenuItem>
+
                     <MenuItem onClick={() => handleMenuItemClick("/submit_tte")}>
                         <UploadIcon sx={{marginRight: '10px'}}/>
                         TTE Comparison
@@ -321,7 +330,7 @@ const CustomToolbar = () => {
                         marginLeft: '8px',
                         fontFamily: "'DM Serif Display', Georgia, serif",
                         fontSize: '1.2rem',
-                        color: '#E0CFA4',
+                        color: '#EAD9AE',
                         letterSpacing: '-0.01em',
                         flexGrow: 1,
                     }}
@@ -329,7 +338,7 @@ const CustomToolbar = () => {
                     mATChmaker
                     <Typography component="span" sx={{
                         fontSize: '11px',
-                        color: 'rgba(224,207,164,0.55)',
+                        color: 'rgba(234,217,174,0.5)',
                         fontFamily: "'DM Mono', monospace",
                         fontWeight: 400,
                         ml: 1.5,
