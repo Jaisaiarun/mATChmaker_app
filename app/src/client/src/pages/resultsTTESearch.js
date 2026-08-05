@@ -1,4 +1,3 @@
-// TODO : Monomoer pairing filter not working
 import React, {useEffect, useMemo, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {toast} from 'react-toastify';
@@ -34,7 +33,7 @@ const SIMILARITY_TIERS = [
     {min: 75, color: '#558b2f', label: '75–90% — closely related'},
     {min: 60, color: '#f9a825', label: '60–75% — likely homologous'},
     {min: 50, color: '#ef6c00', label: '50–60% — distant relatives'},
-    {min: 0,  color: '#c62828', label: '< 50% — weak / spurious'},
+    {min: 0, color: '#c62828', label: '< 50% — weak / spurious'},
 ];
 
 const similarityColor = (sim) => {
@@ -315,7 +314,8 @@ const ResultsTTESearch = () => {
                         label={`Reference DB: ${searchParams.db_cluster_count} clusters / ${searchParams.db_tte_count} TTEs`}
                         size="small"
                     />
-                    <Chip label={`${results.length} reference protocluster${results.length === 1 ? '' : 's'}`} size="small"/>
+                    <Chip label={`${results.length} reference protocluster${results.length === 1 ? '' : 's'}`}
+                          size="small"/>
                     <Chip
                         label={`${totalHits} total hit${totalHits === 1 ? '' : 's'}`}
                         size="small"
@@ -345,6 +345,7 @@ const ResultsTTESearch = () => {
                 const monomerOpts = uniqueMonomersByGroup[group.region_id] || [];
                 const selected = selectedMonomers[group.region_id] || new Set();
                 const filterOpen = !!showFilter[group.region_id];
+                const groupPassesFilter = monomerOpts.length === 0 || selected.size > 0;
 
                 return (
                     <Paper key={group.region_id} variant="outlined" sx={{p: 2, mb: 3}}>
@@ -438,6 +439,10 @@ const ResultsTTESearch = () => {
                             <Typography variant="body2" color="text.secondary" sx={{py: 2}}>
                                 No reference clusters above the similarity threshold.
                             </Typography>
+                        ) : !groupPassesFilter ? (
+                            <Typography variant="body2" color="text.secondary" sx={{py: 2}}>
+                                No monomers selected — check at least one above to show results.
+                            </Typography>
                         ) : (
                             <TableContainer sx={{maxHeight: PAGE_HEIGHT_PX, overflow: 'auto'}}>
                                 <Table size="small" stickyHeader>
@@ -520,7 +525,8 @@ const ResultsTTESearch = () => {
                                                                     <div>File: {h.filename}</div>
                                                                     <div>BGC ID: {h.bgc_id}</div>
                                                                     {h.accession && <div>Accession: {h.accession}</div>}
-                                                                    {h.definition && <div>Definition: {h.definition}</div>}
+                                                                    {h.definition &&
+                                                                        <div>Definition: {h.definition}</div>}
                                                                     {h.locus && <div>Locus: {h.locus}</div>}
                                                                 </Box>
                                                             }
@@ -534,7 +540,8 @@ const ResultsTTESearch = () => {
                                                     <TableCell>
                                                         {h.ref_tte_len ?? '—'} / {h.db_tte_len ?? '—'}
                                                         {typeof h.db_tte_count === 'number' && h.db_tte_count > 1 && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{ml: 1}}>
+                                                            <Typography variant="caption" color="text.secondary"
+                                                                        sx={{ml: 1}}>
                                                                 ({h.db_tte_count} TTEs)
                                                             </Typography>
                                                         )}

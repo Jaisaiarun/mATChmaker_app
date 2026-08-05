@@ -589,14 +589,13 @@ const ResultsTTE = () => {
         URL.revokeObjectURL(url);
     };
 
-// TODO: Improve loading animation - Preparing model loading seconds not working
     // ── loading screen ────────────────────────────────────────────────────────
     if (isLoading) {
         const pct = progress?.total > 0
             ? Math.round((progress.current / progress.total) * 100)
             : null;
 
-        const startedAt = progress?.started_at ? new Date(progress.started_at).getTime() : null;
+        const startedAt = progress?.started_at ? progress.started_at * 1000 : null;
         const loadingElapsedSeconds = startedAt
             ? Math.max(0, Math.floor((nowTs - startedAt) / 1000))
             : 0;

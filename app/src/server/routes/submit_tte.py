@@ -365,8 +365,8 @@ def run_tte(
             "message": "Extracting TTE from reference file...",
             "current": 0,
             "total": total_input_files,
+            "started_at": app.config["JOB_RESULTS"][job_id]["timestamp"],
         }
-
         ref_records = get_tte_records(Path(reference_file_path))
 
         # Build a lookup: region_id -> list of ref TTE rows for that protocore
@@ -400,6 +400,7 @@ def run_tte(
                 "current": file_idx,
                 "total": total_input_files,
                 "current_file": clean_fname,
+                "started_at": app.config["JOB_RESULTS"][job_id]["timestamp"],
             }
 
             input_records = get_tte_records(Path(input_path))
@@ -411,6 +412,7 @@ def run_tte(
                 "total": total_input_files,
                 "current_file": clean_fname,
                 "tte_count": len(input_records),
+                "started_at": app.config["JOB_RESULTS"][job_id]["timestamp"],
             }
 
             for row in input_records:
@@ -457,6 +459,7 @@ def run_tte(
                 "message": "Loading PARAS model...",
                 "current": 0,
                 "total": 0,
+                "started_at": app.config["JOB_RESULTS"][job_id]["timestamp"],
             }
             results, annotated_files = run_paras_on_tte_rows(
                 rows=results,

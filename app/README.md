@@ -79,6 +79,13 @@ docker exec paras-server conda run -n web \
   download-antismash-databases --database-dir /app/antismash_databases
 ```
 
+Copy files through scp mpi server.
+
+```
+scp -r .\my_folder mpi:~/mATChmaker_app/app/
+```
+
+
 ## Learning topics:
 
 - uvicorn - better for development
