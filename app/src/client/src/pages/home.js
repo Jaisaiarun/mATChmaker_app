@@ -9,6 +9,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import HubIcon from '@mui/icons-material/Hub';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 const featuredTool = {
     href: '/submit_tte_search',
@@ -19,7 +20,16 @@ const featuredTool = {
     Icon: TravelExploreIcon,
     iconColor: '#1C6B8C',
 };
-
+const featuredStaticTool = {
+    href: '/TTE_Tree.html',
+    label: 'TE Tree Explorer',
+    description: 'Interactive dendrogram of clustered thioesterase domains (n=1,272)',
+    accent: '#8C6420',
+    iconBg: 'rgba(140,100,32,0.10)',
+    Icon: AccountTreeIcon,
+    iconColor: '#8C6420',
+    external: true, // static file in /public — plain <a>, opens in a new tab
+};
 const tools = [
     {
         href: '/submit_tte',
@@ -58,6 +68,81 @@ const tools = [
         iconColor: '#8C2D4F',
     },
 ];
+const FeaturedCard = ({tool}) => {
+    const linkProps = tool.external
+        ? {component: 'a', href: tool.href, target: '_blank', rel: 'noopener noreferrer'}
+        : {component: RouterLink, to: tool.href};
+
+    return (
+        <Box
+            {...linkProps}
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                textDecoration: 'none',
+                width: '100%',
+                maxWidth: 760,
+                p: '18px 22px',
+                mb: 1.5,
+                background: `linear-gradient(135deg, ${tool.accent}14 0%, #FEFCF5 65%)`,
+                border: `1px solid ${tool.accent}55`,
+                borderRadius: '12px',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 24px rgba(28,26,20,0.10)',
+                },
+            }}
+        >
+            <Box sx={{
+                width: 46, height: 46,
+                borderRadius: '11px',
+                background: tool.iconBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+            }}>
+                <tool.Icon sx={{fontSize: 24, color: tool.iconColor}}/>
+            </Box>
+            <Box sx={{flex: 1, minWidth: 0}}>
+                <Typography sx={{
+                    fontSize: 9.5,
+                    fontFamily: "'DM Mono', monospace",
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: tool.accent,
+                    mb: 0.3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                }}>
+                    Featured
+                    {tool.external && <ExitIcon sx={{fontSize: 11, opacity: 0.7}}/>}
+                </Typography>
+                <Typography sx={{
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    color: '#1C1A14',
+                    mb: 0.3,
+                    lineHeight: 1.3,
+                }}>
+                    {tool.label}
+                </Typography>
+                <Typography sx={{
+                    fontSize: '0.82rem',
+                    color: '#6B5F47',
+                    lineHeight: 1.5,
+                }}>
+                    {tool.description}
+                </Typography>
+            </Box>
+        </Box>
+    );
+};
 
 const Home = () => {
     return (
@@ -119,72 +204,9 @@ const Home = () => {
                 <Box sx={{flex: 1, height: '1px', background: '#DCCFA0'}}/>
             </Box>
 
-            {/* ── Featured tool — TTE Reference Search ── */}
-            <Box
-                component={RouterLink}
-                to={featuredTool.href}
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    textDecoration: 'none',
-                    width: '100%',
-                    maxWidth: 760,
-                    p: '18px 22px',
-                    mb: 1.5,
-                    background: `linear-gradient(135deg, ${featuredTool.accent}14 0%, #FEFCF5 65%)`,
-                    border: `1px solid ${featuredTool.accent}55`,
-                    borderRadius: '12px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'transform 0.15s, box-shadow 0.15s',
-                    '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 24px rgba(28,26,20,0.10)',
-                    },
-                }}
-            >
-                <Box sx={{
-                    width: 46, height: 46,
-                    borderRadius: '11px',
-                    background: featuredTool.iconBg,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <featuredTool.Icon sx={{fontSize: 24, color: featuredTool.iconColor}}/>
-                </Box>
-                <Box sx={{flex: 1, minWidth: 0}}>
-                    <Typography sx={{
-                        fontSize: 9.5,
-                        fontFamily: "'DM Mono', monospace",
-                        letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                        color: featuredTool.accent,
-                        mb: 0.3,
-                    }}>
-                        Featured
-                    </Typography>
-                    <Typography sx={{
-                        fontWeight: 600,
-                        fontSize: '1rem',
-                        color: '#1C1A14',
-                        mb: 0.3,
-                        lineHeight: 1.3,
-                    }}>
-                        {featuredTool.label}
-                    </Typography>
-                    <Typography sx={{
-                        fontSize: '0.82rem',
-                        color: '#6B5F47',
-                        lineHeight: 1.5,
-                    }}>
-                        {featuredTool.description}
-                    </Typography>
-                </Box>
-            </Box>
-
+            {/* ── Featured tools — TTE Reference Search + TE Tree Explorer ── */}
+            <FeaturedCard tool={featuredTool}/>
+            <FeaturedCard tool={featuredStaticTool}/>
             {/* ── Tool cards — even 2x2 grid, no orphaned row ── */}
             <Box sx={{
                 display: 'grid',
@@ -284,7 +306,8 @@ const Home = () => {
                     color: '#5C5341',
                     letterSpacing: '0.01em',
                 }}>
-                    Dr. Patrick Gonschorek &nbsp;·&nbsp; Dr. Christian Schelhas &nbsp;·&nbsp; Jaisaiarun Prathapam Srinivasan
+                    Dr. Patrick Gonschorek &nbsp;·&nbsp; Dr. Christian Schelhas &nbsp;·&nbsp; Jaisaiarun Prathapam
+                    Srinivasan
                 </Typography>
             </Box>
 
