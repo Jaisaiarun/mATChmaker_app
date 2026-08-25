@@ -1,99 +1,98 @@
-# Webapp
+# mATChmaker — Web App
 
-First make sure all three PARAS and PARASECT models are present in the `app/models` folder.
-You can download the models from [Zenodo](https://zenodo.org/records/13165500).
+This is the web application for **mATChmaker**, a platform for NRPS adenylation-domain
+substrate prediction and Thioesterase Terminal Extension (TTE) analysis, built on top of
+the [PARAS/PARASECT](https://github.com/BTheDragonMaster/parasect) prediction engine.
 
-## Run locally for development
+## Prerequisites
+
+Before running the app, make sure the following are in place:
+
+- The PARAS and PARASECT model files, placed in `app/models/`.
+  Download them from [Zenodo](https://zenodo.org/records/13165500).
+- The antiSMASH and MIBiG-derived databases (see [Docker: first-run setup](#first-run-setup) below,
+  or set these up manually if running outside Docker).
+
+## Run with Docker (recommended)
+
+The app ships as two services — `matchmaker-server` (API) and `matchmaker-client` (React + nginx).
+
+Create a `.env` file in `app/` with:
+
+`REACT_APP_TURNSTILE_SITE_KEY=<your_turnstile_site_key>`
+
+Build and start everything:
+
+```bash
+docker compose -p matchmaker up --build --force-recreate --remove-orphans -d
+```
+
+The app will be available at `http://localhost:4010/`.
+
+### First-run setup
+
+The first time you start the server, run this to download the antiSMASH databases
+(only needed once — they persist in the `antismash_databases` volume):
+
+```bash
+docker exec matchmaker-server conda run -n web \
+  download-antismash-databases --database-dir /app/antismash_databases
+```
+
+### Useful commands
+
+Build and start the development server (with the dev override file):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -p matchmaker up --build
+```
+
+Stop the containers:
+
+```bash
+docker compose -p matchmaker down
+```
+
+## Run locally for development (without Docker)
 
 ### Server
 
-Create a local environment with conda and install server side dependencies with pip from `src/server/requirements.txt`:
-
 ```bash
-conda create -n paras python=3.9
-conda activate paras
-pip install -r src/server/requirements.txt
+conda env create -n web -f server-environment.yml
+conda activate web
+pip install -r server-requirements.txt
 ```
 
-Install the following dependencies on your machine:
+You'll also need on your machine:
 
 * hmmer2
-* muscle (v.3.8.1551)
+* muscle (v3.8.1551)
+
+Start the server:
+
+```bash
+bash src/server/start.sh
+```
 
 ### Client
-
-First install NPM package manager and Node.js on your device.
-
-Then install client side dependencies with NPM from `src/client/package.json`:
 
 ```bash
 cd src/client
 npm install
-```
-
-### Run
-
-Run the server in one terminal:
-
-```bash
-bash run_server.sh
-```
-
-Run the client in another terminal:
-
-```bash 
-cd src/client
 npm start
 ```
 
-Visit `https://localhost:3000/` in your browser to view the app.
+Visit `http://localhost:3000/` in your browser.
 
-## Run with Docker
+## Deployment notes
 
-Run the following script to build and runt he app in a Docker container:
+Copying files to the deployment server:
 
 ```bash
-docker-compose -p paras up --build --force-recreate --remove-orphans -d
+scp -r ./my_folder <your-server-alias>:~/mATChmaker_app/app/
 ```
 
-The app will be available at `https://localhost:4010/`.
+## Stack notes
 
-### Commands
-
-Build the development server image
-
-```
-docker compose -f docker-compose.yml -f docker-compose.dev.yml -p paras up --build
-````
-
-Stop the development server container
-
-```
-docker compose -p paras down
-```
-
-Run this once after deploying to download the antiSMASH databases (takes a while)
-
-```
-docker exec paras-server conda run -n web \
-  download-antismash-databases --database-dir /app/antismash_databases
-```
-
-Copy files through scp mpi server.
-
-```
-scp -r .\my_folder mpi:~/mATChmaker_app/app/
-```
-
-
-## Learning topics:
-
-- uvicorn - better for development
-- gunicorn - better for production
-
-## To Do :
-
-- add filters for table , for sorting and filtering
-- get access to to database and also to raven cluster
-- better monomer pairings
-- paras annotations as a seperate asdomain in genebank file 
+- Server: FastAPI/Flask served via `gunicorn` (production) — `uvicorn` is used for local dev/reload.
+- Client: React, built and served via nginx in production.
