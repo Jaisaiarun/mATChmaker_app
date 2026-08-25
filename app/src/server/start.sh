@@ -14,6 +14,10 @@ else
     echo "=== antiSMASH databases already present, skipping download ==="
 fi
 
+# New: make sure the mibig_nrps_db_out volume is writable by the app user
+mkdir -p /app/mibig_nrps_db_out
+chown -R 1000:1000 /app/mibig_nrps_db_out
+
 exec su -s /bin/bash app -c \
     "source /opt/conda/etc/profile.d/conda.sh && conda activate web && \
      gunicorn -b :4009 --worker-class gthread \
