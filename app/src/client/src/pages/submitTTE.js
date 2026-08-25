@@ -160,6 +160,11 @@ const SubmitTTE = () => {
                 <Typography sx={{color: '#5C5341', fontSize: '0.9rem'}}>
                     Upload GenBank files to compare thioesterase domain sequences against a reference.
                 </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{mt: 1, display: 'block'}}>
+                    File must already be antiSMASH-annotated (containing{' '}
+                    <code>aSDomain</code> and <code>PFAM_domain</code> features).
+                    Run the antiSMASH Annotation tool first if your file is raw.
+                </Typography>
             </Box>
 
             <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>

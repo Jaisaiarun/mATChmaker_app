@@ -23,7 +23,7 @@ const featuredTool = {
 const featuredStaticTool = {
     href: '/TTE_Tree.html',
     label: 'TE Tree Explorer',
-    description: 'Interactive dendrogram of clustered thioesterase domains (n=1,272)',
+    description: 'Interactive dendrogram of clustered thioesterase domains',
     accent: '#8C6420',
     iconBg: 'rgba(140,100,32,0.10)',
     Icon: AccountTreeIcon,
