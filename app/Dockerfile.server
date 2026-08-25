@@ -38,7 +38,8 @@ RUN chmod +x /app/start.sh \
 # App code
 COPY --chown=${USER_UID}:${USER_GID} ./src/server/ /app/
 
-RUN mkdir -p /app/temp /app/antismash_databases \
+RUN chmod +x /app/start.sh \
+ && mkdir -p /app/temp /app/antismash_databases \
  && chown -R ${USER_UID}:${USER_GID} /app
 
 ENV PYTHONUNBUFFERED=1 \
