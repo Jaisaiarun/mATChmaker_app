@@ -8,6 +8,8 @@
 clusters — from raw sequence or genome annotation all the way to substrate specificity
 prediction and thioesterase domain comparison. It won **Best Software Tool at iGEM 2025**.
 
+🔗 **Live app:** [nrps-matchmaker.mpi-marburg.mpg.de](https://nrps-matchmaker.mpi-marburg.mpg.de/)
+
 ## What it does
 
 mATChmaker brings together several NRPS analysis workflows in one browser-based tool:
@@ -42,10 +44,10 @@ analyses as a browser-based app, so no local setup or Python experience is neede
 
 ## Web application
 
-See [`app/README.md`](app/README.md) for instructions on running mATChmaker locally or with Docker.
+Try it live at [nrps-matchmaker.mpi-marburg.mpg.de](https://nrps-matchmaker.mpi-marburg.mpg.de/),
+or see [`app/README.md`](app/README.md) for instructions on running it locally or with Docker.
 
 ## Credits
 
 - Built on [PARAS/PARASECT](https://github.com/BTheDragonMaster/parasect) by Barbara Terlouw and
   David Meijer, licensed under AGPLv3.
-- Developed by the mATChmaker team for iGEM 2025.
