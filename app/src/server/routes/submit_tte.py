@@ -17,7 +17,7 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
-from .common import ResponseData, Status
+from .common import ResponseData, Status, sanitize_genbank_locus
 from .constants import TEMP_DIR
 
 blueprint_submit_tte = Blueprint("submit_tte", __name__)
@@ -567,11 +567,13 @@ def submit_tte() -> dict:
         f"{job_id}_REF_{secure_filename(reference_file.filename)}"
     )
     reference_file.save(reference_file_path)
+    sanitize_genbank_locus(reference_file_path)
 
     input_file_paths = []
     for idx, f in enumerate(input_files):
         path = os.path.join(TEMP_DIR, f"{job_id}_IN_{idx}_{secure_filename(f.filename)}")
         f.save(path)
+        sanitize_genbank_locus(path)
         input_file_paths.append(path)
 
     threading.Thread(

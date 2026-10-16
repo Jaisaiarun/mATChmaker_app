@@ -5,7 +5,9 @@ Routes for running antiSMASH on a GenBank file and returning the annotated outpu
 
 antiSMASH is run with:
   - NRPS/PKS analysis (default) → produces aSModule, monomer_pairings, aSDomain features
-  - PFAM domain annotation      → produces PFAM_domain features
+  - Pfam search on cluster genes (--clusterhmmer) → produces PFAM_domain features
+    (antiSMASH strips its own features from the input and recomputes them, so
+    existing PFAM_domain features are replaced, not kept)
   - Input gene annotations kept (--genefinding-tool none)
 
 The merged annotated GenBank is returned as a downloadable file.
@@ -24,7 +26,7 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
-from .common import ResponseData, Status
+from .common import ResponseData, Status, sanitize_genbank_locus
 from .constants import TEMP_DIR
 
 blueprint_antismash = Blueprint("antismash", __name__)
@@ -51,17 +53,22 @@ def _find_antismash() -> str:
 
 def _merge_antismash_output(output_dir: Path, original_stem: str) -> tuple[Path, dict]:
     """
-    antiSMASH writes one .gbk per region.  Merge all region files into a single
-    multi-record GenBank, fixing molecule_type if missing.
+    antiSMASH writes one summary .gbk with every input record (fully annotated)
+    plus one <record>.regionNNN.gbk per region. The region files are subsets of
+    the summary, so combining both duplicates every region. Use only the summary
+    file; fall back to the region files if no summary is found.
 
     Returns (merged_path, {filename: full_path}) for download.
     """
-    region_files = sorted(output_dir.glob("*.gbk")) + sorted(output_dir.glob("*.gb"))
-    if not region_files:
+    all_gbk = sorted(output_dir.glob("*.gbk")) + sorted(output_dir.glob("*.gb"))
+    region_re = re.compile(r"\.region\d+\.gbk?$")
+    summary_files = [p for p in all_gbk if not region_re.search(p.name)]
+    source_files = summary_files or all_gbk
+    if not source_files:
         raise Exception("antiSMASH produced no GenBank output files.")
 
     all_records = []
-    for rf in region_files:
+    for rf in source_files:
         for rec in SeqIO.parse(str(rf), "genbank"):
             if "molecule_type" not in rec.annotations:
                 rec.annotations["molecule_type"] = "DNA"
@@ -71,11 +78,7 @@ def _merge_antismash_output(output_dir: Path, original_stem: str) -> tuple[Path,
     out_path = Path(TEMP_DIR) / out_name
     SeqIO.write(all_records, str(out_path), "genbank")
 
-    # also expose individual region files for granular download
     gb_file_paths = {out_name: str(out_path)}
-    for rf in region_files:
-        gb_file_paths[rf.name] = str(rf)
-
     return out_path, gb_file_paths
 
 
@@ -113,7 +116,8 @@ def run_antismash_annotation(job_id: str, input_path: str) -> None:
             str(gbk_path),
             "--output-dir", str(output_dir),
             "--genefinding-tool", "none",  # keep existing gene annotations
-            "--pfam2go",  # PFAM domain annotation
+            "--clusterhmmer",  # Pfam search on genes in each region -> PFAM_domain
+            "--pfam2go",  # GO terms for those Pfam hits
             "--cpus", "4",
             "--logfile", str(output_dir / "antismash.log"),
         ]
@@ -213,6 +217,7 @@ def submit_antismash():
     safe_name = secure_filename(f.filename)
     input_path = os.path.join(TEMP_DIR, f"{job_id}_A_{safe_name}")
     f.save(input_path)
+    sanitize_genbank_locus(input_path)
 
     app.config["JOB_RESULTS"][job_id] = {
         "status": str(Status.Pending).lower(),

@@ -17,7 +17,7 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
-from .common import ResponseData, Status
+from .common import ResponseData, Status, sanitize_genbank_locus
 from .constants import TEMP_DIR
 from .xu_xut_utils import (
     get_records,
@@ -196,6 +196,7 @@ def submit_xu_xut():
     safe_name = secure_filename(f.filename)
     input_path = os.path.join(TEMP_DIR, f"{job_id}_A_{safe_name}")
     f.save(input_path)
+    sanitize_genbank_locus(input_path)
 
     app.config["JOB_RESULTS"][job_id] = {
         "status": str(Status.Pending).lower(),

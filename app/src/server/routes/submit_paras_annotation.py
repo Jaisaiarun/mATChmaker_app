@@ -15,7 +15,7 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from .app import app
-from .common import ResponseData, Status
+from .common import ResponseData, Status, sanitize_genbank_locus
 from .constants import TEMP_DIR
 
 blueprint_paras_annotation = Blueprint("paras_annotation", __name__)
@@ -253,6 +253,7 @@ def submit_paras_annotation():
     safe_name = secure_filename(f.filename)
     input_path = os.path.join(TEMP_DIR, f"{job_id}_A_{safe_name}")
     f.save(input_path)
+    sanitize_genbank_locus(input_path)
 
     # initialize progress immediately so frontend sees something before worker starts
     app.config["JOB_RESULTS"][job_id] = {

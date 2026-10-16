@@ -63,12 +63,13 @@ const SubmitAntiSMASH = () => {
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
                 Upload a GenBank file with existing gene annotations. antiSMASH will
-                be run with PFAM domain annotation (<code>--pfam2go</code>) and
-                full NRPS/PKS analysis, adding <code>PFAM_domain</code>,{' '}
-                <code>aSDomain</code>, <code>aSModule</code>, and{' '}
+                be run with a Pfam search on cluster genes (<code>--clusterhmmer</code>,{' '}
+                <code>--pfam2go</code>) and full NRPS/PKS analysis, adding{' '}
+                <code>PFAM_domain</code>, <code>aSDomain</code>, <code>aSModule</code>, and{' '}
                 <code>monomer_pairings</code> features. Gene calling is skipped
                 (<code>--genefinding-tool none</code>) so your existing CDS features
-                are preserved.
+                are preserved. Annotations from a previous antiSMASH run in the
+                uploaded file are replaced by the new results.
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{mt: 1}} gutterBottom>

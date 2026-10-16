@@ -27,7 +27,7 @@ from flask import Blueprint, request
 from werkzeug.utils import secure_filename
 
 from .app import app
-from .common import ResponseData, Status
+from .common import ResponseData, Status, sanitize_genbank_locus
 from .constants import TEMP_DIR
 from .submit_tte import get_tte_records, get_similarity
 
@@ -294,6 +294,7 @@ def submit_tte_search():
     safe_name = secure_filename(f.filename)
     reference_path = os.path.join(TEMP_DIR, f"{job_id}_REF_{safe_name}")
     f.save(reference_path)
+    sanitize_genbank_locus(reference_path)
 
     app.config["JOB_RESULTS"][job_id] = {
         "status": str(Status.Pending).lower(),
