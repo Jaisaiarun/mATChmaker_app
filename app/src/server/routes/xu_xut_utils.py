@@ -214,6 +214,20 @@ def _split_cds_map(
 
 
 # ── Parser ────────────────────────────────────────────────────────────────────
+def _cds_id(q: dict, index: int) -> str:
+    """
+    Return the CDS identifier the way antiSMASH names it: locus_tag, then gene,
+    then protein_id. antiSMASH writes this same name into the /locus_tag of its
+    aSDomain and PFAM_domain features, so domains can be matched to their CDS
+    even when the CDS itself has no /locus_tag (e.g. NCBI/MIBiG records).
+    """
+    for key in ("locus_tag", "gene", "protein_id"):
+        vals = q.get(key)
+        if vals and vals[0]:
+            return vals[0]
+    return f"unknown_{index}"
+
+
 def get_records(gbk_path: str) -> list[tuple[str, dict[str, CDS], str, bool]]:
     """
     Parse GenBank and return one tuple per record:
@@ -234,7 +248,7 @@ def get_records(gbk_path: str) -> list[tuple[str, dict[str, CDS], str, bool]]:
             q = feature.qualifiers
 
             if feature.type == "CDS":
-                lt = q.get("locus_tag", ["unknown"])[0]
+                lt = _cds_id(q, len(cds_map))
                 cds_map[lt] = CDS(
                     locus_tag=lt,
                     start=int(feature.location.start),

@@ -23,10 +23,10 @@ MODEL_PARASECT = os.path.join(MODEL_DIR, "model.parasect")
 MODEL_PARASECT_BACTERIAL = os.path.join(MODEL_DIR, "bacterial_model.parasect")
 
 loader = MultiModelLoader({
-    "parasAllSubstrates": ModelSpec(name="PARAS (all substrates)", path=MODEL_PARAS_ALL_SUBSTRATES, mmap=True),
-    "parasCommonSubstrates": ModelSpec(name="PARAS (common substrates)", path=MODEL_PARAS_COMMON_SUBSTRATES, mmap=True),
-    "parasect": ModelSpec(name="PARASECT", path=MODEL_PARASECT, mmap=True),
-    "parasectBacterial": ModelSpec(name="PARASECT (bacterial)", path=MODEL_PARASECT_BACTERIAL, mmap=True),
+    "parasAllSubstrates": ModelSpec(name="PARAS (all substrates)", path=MODEL_PARAS_ALL_SUBSTRATES, mmap=False),
+    "parasCommonSubstrates": ModelSpec(name="PARAS (common substrates)", path=MODEL_PARAS_COMMON_SUBSTRATES, mmap=False),
+    "parasect": ModelSpec(name="PARASECT", path=MODEL_PARASECT, mmap=False),
+    "parasectBacterial": ModelSpec(name="PARASECT (bacterial)", path=MODEL_PARASECT_BACTERIAL, mmap=False),
 })
 
 import threading
